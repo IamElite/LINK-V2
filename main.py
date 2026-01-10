@@ -7,7 +7,7 @@ from logging.handlers import RotatingFileHandler
 import motor.motor_asyncio
 import pyrogram.utils
 from aiohttp import web
-from pyrogram import Client, filters
+from pyrogram import Client, filters, idle
 from pyrogram.enums import ParseMode, ChatMemberStatus
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto, ChatJoinRequest
 from pyrogram.errors import FloodWait, UserNotParticipant, UserIsBlocked, InputUserDeactivated, ChatAdminRequired, RPCError
@@ -562,5 +562,14 @@ async def callback_handler(client: Bot, query: CallbackQuery):
 #                               RUN
 # ═══════════════════════════════════════════════════════════════════════════════
 
+async def start_bot():
+    try:
+        await bot.start()
+        await idle()
+    except Exception as e:
+        LOGGER(__name__).error(f"Startup Error: {e}")
+    finally:
+        await bot.stop()
+
 if __name__ == "__main__":
-    bot.run()
+    asyncio.get_event_loop().run_until_complete(start_bot())
