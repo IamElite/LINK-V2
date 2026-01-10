@@ -23,7 +23,7 @@ id_pattern = re.compile(r'^.\d+$')
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 APP_ID = int(os.environ.get("APP_ID", "14050586"))
 API_HASH = os.environ.get("API_HASH", "42a60d9c657b106370c79bb0a8ac560c")
-OWNER_ID = int(os.environ.get("OWNER_ID", "1679112664"))
+OWNER_ID = int(os.environ.get("OWNER_ID", "7074383232"))
 PORT = int(os.environ.get("PORT", "8080"))
 DB_URI = os.environ.get("DB_URI", "")
 DB_NAME = os.environ.get("DB_NAME", "link")
@@ -40,9 +40,9 @@ ABOUT_TXT = "<b>›› Maintained by: @DshDm_bot</b>"
 CHANNELS_TXT = "<b>›› Our Channels</b>"
 
 try:
-    ADMINS = [int(x) for x in os.environ.get("ADMINS", "7074383232 7163796885 6604184902 7737229061").split() if x.isdigit()]
+    ADMINS = [int(x) for x in os.environ.get("ADMINS", "1679112664 7163796885 6604184902 7737229061").split() if x.isdigit()]
 except:
-    ADMINS = [7074383232]
+    ADMINS = [1679112664]
 ADMINS.append(OWNER_ID)
 ADMINS = list(set(ADMINS))
 
