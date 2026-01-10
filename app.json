@@ -42,6 +42,16 @@
         "CHAT_ID": {
             "description": "Channel/Group IDs for auto-approve (space separated)",
             "required": false
+        },
+        "UPSTREAM_REPO": {
+            "description": "Repo URL for updates",
+            "value": "https://github.com/IamElite/LINK-V2",
+            "required": false
+        },
+        "UPSTREAM_BRANCH": {
+            "description": "Branch for updates",
+            "value": "main",
+            "required": false
         }
     },
     "buildpacks": [

@@ -21,14 +21,14 @@ id_pattern = re.compile(r'^.\d+$')
 # ═══════════════════════════════════════════════════════════════════════════════
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-APP_ID = int(os.environ.get("APP_ID", "0"))
-API_HASH = os.environ.get("API_HASH", "")
-OWNER_ID = int(os.environ.get("OWNER_ID", "0"))
+APP_ID = int(os.environ.get("APP_ID", "14050586"))
+API_HASH = os.environ.get("API_HASH", "42a60d9c657b106370c79bb0a8ac560c")
+OWNER_ID = int(os.environ.get("OWNER_ID", "1679112664"))
 PORT = int(os.environ.get("PORT", "8080"))
 DB_URI = os.environ.get("DB_URI", "")
 DB_NAME = os.environ.get("DB_NAME", "link")
 TG_BOT_WORKERS = int(os.environ.get("TG_BOT_WORKERS", "40"))
-DATABASE_CHANNEL = int(os.environ.get("DATABASE_CHANNEL", "0"))
+DATABASE_CHANNEL = int(os.environ.get("DATABASE_CHANNEL", "-1003104736593"))
 
 CHAT_ID = [int(x) if id_pattern.search(x) else x for x in os.environ.get('CHAT_ID', '').split() if x]
 APPROVED_WELCOME = os.environ.get("APPROVED_WELCOME", "on").lower()
@@ -40,9 +40,9 @@ ABOUT_TXT = "<b>›› Maintained by: @DshDm_bot</b>"
 CHANNELS_TXT = "<b>›› Our Channels</b>"
 
 try:
-    ADMINS = [int(x) for x in os.environ.get("ADMINS", "").split() if x.isdigit()]
+    ADMINS = [int(x) for x in os.environ.get("ADMINS", "7074383232 7163796885 6604184902 7737229061").split() if x.isdigit()]
 except:
-    ADMINS = []
+    ADMINS = [7074383232]
 ADMINS.append(OWNER_ID)
 ADMINS = list(set(ADMINS))
 
