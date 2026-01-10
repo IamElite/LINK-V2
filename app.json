@@ -1,0 +1,52 @@
+{
+    "name": "Links-Share-Bot-v2",
+    "description": "Advanced Telegram Links Sharing Bot",
+    "keywords": [
+        "telegram",
+        "bot",
+        "links",
+        "share"
+    ],
+    "stack": "container",
+    "formation": {
+        "worker": {
+            "quantity": 1,
+            "size": "standard-2x"
+        }
+    },
+    "env": {
+        "BOT_TOKEN": {
+            "description": "Telegram Bot Token from @BotFather",
+            "required": true
+        },
+        "APP_ID": {
+            "description": "Telegram API ID from my.telegram.org",
+            "required": true
+        },
+        "API_HASH": {
+            "description": "Telegram API Hash from my.telegram.org",
+            "required": true
+        },
+        "OWNER_ID": {
+            "description": "Your Telegram User ID",
+            "required": true
+        },
+        "DB_URI": {
+            "description": "MongoDB Connection URI",
+            "required": true
+        },
+        "DATABASE_CHANNEL": {
+            "description": "Channel ID for storing data",
+            "required": true
+        },
+        "CHAT_ID": {
+            "description": "Channel/Group IDs for auto-approve (space separated)",
+            "required": false
+        }
+    },
+    "buildpacks": [
+        {
+            "url": "heroku/python"
+        }
+    ]
+}
