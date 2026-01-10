@@ -21,21 +21,21 @@ id_pattern = re.compile(r'^.\d+$')
 # ═══════════════════════════════════════════════════════════════════════════════
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-APP_ID = int(os.environ.get("APP_ID", "14050586"))
-API_HASH = os.environ.get("API_HASH", "42a60d9c657b106370c79bb0a8ac560c")
-OWNER_ID = int(os.environ.get("OWNER_ID", "7074383232"))
+API_ID = 14050586
+API_HASH = "42a60d9c657b106370c79bb0a8ac560c"
+OWNER_ID = 7074383232
 PORT = int(os.environ.get("PORT", "8080"))
 DB_URI = os.environ.get("DB_URI", "")
-DB_NAME = os.environ.get("DB_NAME", "link")
-TG_BOT_WORKERS = int(os.environ.get("TG_BOT_WORKERS", "40"))
-DATABASE_CHANNEL = int(os.environ.get("DATABASE_CHANNEL", "-1003104736593"))
+DB_NAME = "link"
+TG_BOT_WORKERS = 40
+DATABASE_CHANNEL = -1003104736593
 
-CHAT_ID = [int(x) if id_pattern.search(x) else x for x in os.environ.get('CHAT_ID', '').split() if x]
-APPROVED_WELCOME = os.environ.get("APPROVED_WELCOME", "on").lower()
+CHAT_ID = []
+APPROVED_WELCOME = "on"
 APPROVAL_WAIT_TIME = 5
 
-START_PIC = os.environ.get("START_PIC", "https://telegra.ph/file/f3d3aff9ec422158feb05-d2180e3665e0ac4d32.jpg")
-START_MSG = os.environ.get("START_MESSAGE", "<b>ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ ᴀᴅᴠᴀɴᴄᴇᴅ ʟɪɴᴋs sʜᴀʀɪɴɢ ʙᴏᴛ.</b>")
+START_PIC = "https://telegra.ph/file/f3d3aff9ec422158feb05-d2180e3665e0ac4d32.jpg"
+START_MSG = "<b>ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ ᴀᴅᴠᴀɴᴄᴇᴅ ʟɪɴᴋs sʜᴀʀɪɴɢ ʙᴏᴛ.</b>"
 ABOUT_TXT = "<b>›› Maintained by: @DshDm_bot</b>"
 CHANNELS_TXT = "<b>›› Our Channels</b>"
 
@@ -233,7 +233,7 @@ class Bot(Client):
         super().__init__(
             name="Bot",
             api_hash=API_HASH,
-            api_id=APP_ID,
+            api_id=API_ID,
             bot_token=BOT_TOKEN,
             workers=TG_BOT_WORKERS,
         )
