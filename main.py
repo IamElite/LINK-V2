@@ -404,12 +404,12 @@ async def start_cmd(client: Bot, message: Message):
                 channel_id = await get_channel_by_encoded_link(arg)
             
             if not channel_id:
-                return await message.reply("<b>❌ Invalid or expired link.</b>")
+                return await message.reply(f"<b>❌ {stylize('Invalid or expired link.')}</b>")
             
             orig = await get_original_link(channel_id)
             if orig:
-                btn = InlineKeyboardMarkup([[InlineKeyboardButton("• Open Link •", url=orig)]])
-                return await message.reply("<b>✅ Here is your link!</b>", reply_markup=btn)
+                btn = InlineKeyboardMarkup([[InlineKeyboardButton(stylize("• Open Link •"), url=orig)]])
+                return await message.reply(f"<b>✅ {stylize('Here is your link!')}</b>", reply_markup=btn)
             
             async with channel_locks[channel_id]:
                 old = await get_current_invite_link(channel_id)
@@ -455,35 +455,35 @@ async def start_cmd(client: Bot, message: Message):
 @bot.on_message(filters.command('status') & filters.private & is_owner_or_admin)
 async def status_cmd(client: Bot, message: Message):
     t1 = time.time()
-    msg = await message.reply("<b>Processing...</b>")
+    msg = await message.reply(f"<b>{stylize('Processing...')}</b>")
     ping = (time.time() - t1) * 1000
     users = await full_userbase()
     uptime = get_readable_time(int((datetime.now() - client.uptime).total_seconds()))
-    await msg.edit(f"<b>👥 Users: {len(users)}\n⏱ Uptime: {uptime}\n📶 Ping: {ping:.2f}ms</b>")
+    await msg.edit(f"<b>👥 {stylize('Users')}: {len(users)}\n⏱ {stylize('Uptime')}: {uptime}\n📶 {stylize('Ping')}: {ping:.2f}ms</b>")
 
 @bot.on_message(filters.command('stats') & filters.user(OWNER_ID))
 async def stats_cmd(client: Bot, message: Message):
     uptime = get_readable_time(int((datetime.now() - client.uptime).total_seconds()))
-    await message.reply(f"<b>BOT UPTIME:</b> {uptime}")
+    await message.reply(f"<b>{stylize('BOT UPTIME')}:</b> {uptime}")
 
 @bot.on_message(filters.command('broadcast') & filters.private & is_owner_or_admin)
 async def broadcast_cmd(client: Bot, message: Message):
     global is_canceled
     if not message.reply_to_message:
-        return await message.reply("<b>Reply to a message to broadcast.</b>")
+        return await message.reply(f"<b>{stylize('Reply to a message to broadcast.')}</b>")
     
     async with cancel_lock:
         is_canceled = False
     
     users = await full_userbase()
     total = len(users)
-    msg = await message.reply(f"<b>📣 Broadcasting to {total} users...</b>")
+    msg = await message.reply(f"<b>📣 {stylize('Broadcasting to')} {total} {stylize('users...')}</b>")
     
     success = blocked = failed = 0
     for uid in users:
         async with cancel_lock:
             if is_canceled:
-                return await msg.edit("<b>❌ Broadcast cancelled!</b>")
+                return await msg.edit(f"<b>❌ {stylize('Broadcast cancelled!')}</b>")
         try:
             await message.reply_to_message.copy(uid)
             success += 1
@@ -503,14 +503,14 @@ async def broadcast_cmd(client: Bot, message: Message):
         except:
             failed += 1
     
-    await msg.edit(f"<b>✅ Broadcast Complete!\n\n• Success: {success}\n• Blocked: {blocked}\n• Failed: {failed}</b>")
+    await msg.edit(f"<b>✅ {stylize('Broadcast Complete!')}\n\n• {stylize('Success')}: {success}\n• {stylize('Blocked')}: {blocked}\n• {stylize('Failed')}: {failed}</b>")
 
 @bot.on_message(filters.command('cancel') & filters.private & is_owner_or_admin)
 async def cancel_cmd(client: Bot, message: Message):
     global is_canceled
     async with cancel_lock:
         is_canceled = True
-    await message.reply("<b>🛑 Broadcast will be cancelled.</b>")
+    await message.reply(f"<b>🛑 {stylize('Broadcast will be cancelled.')}</b>")
 
 PAGE_SIZE = 6
 
@@ -519,7 +519,7 @@ async def addchat_cmd(client: Bot, message: Message):
     try:
         channel_id = int(message.command[1])
     except:
-        return await message.reply("<b>Usage: /addchat {channel_id}</b>")
+        return await message.reply(f"<b>{stylize('Usage')}: /addchat {{channel_id}}</b>")
     
     try:
         chat = await client.get_chat(channel_id)
@@ -531,32 +531,32 @@ async def addchat_cmd(client: Bot, message: Message):
         link1 = f"https://t.me/{client.username}?start={enc1}"
         link2 = f"https://t.me/{client.username}?start=req_{enc2}"
         
-        await message.reply(f"<b>✅ {chat.title} added!</b>\n\n<b>Normal:</b> <code>{link1}</code>\n<b>Request:</b> <code>{link2}</code>")
+        await message.reply(f"<b>✅ {stylize(chat.title)} {stylize('added!')}</b>\n\n<b>{stylize('Normal')}:</b> <code>{link1}</code>\n<b>{stylize('Request')}:</b> <code>{link2}</code>")
     except Exception as e:
-        await message.reply(f"<b>❌ Error: {e}</b>")
+        await message.reply(f"<b>❌ {stylize('Error')}: {e}</b>")
 
 @bot.on_message(filters.command(['delchat', 'delch']) & is_owner_or_admin)
 async def delchat_cmd(client: Bot, message: Message):
     try:
         channel_id = int(message.command[1])
         await delete_channel(channel_id)
-        await message.reply(f"<b>✅ Channel {channel_id} removed.</b>")
+        await message.reply(f"<b>✅ {stylize('Channel')} {channel_id} {stylize('removed.')}</b>")
     except:
-        await message.reply("<b>Usage: /delchat {channel_id}</b>")
+        await message.reply(f"<b>{stylize('Usage')}: /delchat {{channel_id}}</b>")
 
 @bot.on_message(filters.command('channels') & is_owner_or_admin)
 async def channels_cmd(client: Bot, message: Message):
     channels = await get_channels()
     if not channels:
-        return await message.reply("<b>No channels available.</b>")
+        return await message.reply(f"<b>{stylize('No channels available.')}</b>")
     
-    text = "<b>📺 Connected Channels:</b>\n\n"
+    text = f"<b>📺 {stylize('Connected Channels')}:</b>\n\n"
     for i, cid in enumerate(channels[:20], 1):
         try:
             chat = await get_chat_cached(client, cid)
-            text += f"{i}. {chat.title} (<code>{cid}</code>)\n"
+            text += f"{i}. {stylize(chat.title)} (<code>{cid}</code>)\n"
         except:
-            text += f"{i}. Unknown (<code>{cid}</code>)\n"
+            text += f"{i}. {stylize('Unknown')} (<code>{cid}</code>)\n"
     
     await message.reply(text)
 
@@ -564,9 +564,9 @@ async def channels_cmd(client: Bot, message: Message):
 async def links_cmd(client: Bot, message: Message):
     channels = await get_channels()
     if not channels:
-        return await message.reply("<b>No channels.</b>")
+        return await message.reply(f"<b>{stylize('No channels.')}</b>")
     
-    text = "<b>🔗 All Links:</b>\n\n"
+    text = f"<b>🔗 {stylize('All Links')}:</b>\n\n"
     for i, cid in enumerate(channels[:10], 1):
         try:
             chat = await get_chat_cached(client, cid)
@@ -575,7 +575,7 @@ async def links_cmd(client: Bot, message: Message):
             await save_encoded_link2(cid, enc2)
             l1 = f"https://t.me/{client.username}?start={enc1}"
             l2 = f"https://t.me/{client.username}?start=req_{enc2}"
-            text += f"<b>{i}. {chat.title}</b>\n• Normal: <code>{l1}</code>\n• Request: <code>{l2}</code>\n\n"
+            text += f"<b>{i}. {stylize(chat.title)}</b>\n• {stylize('Normal')}: <code>{l1}</code>\n• {stylize('Request')}: <code>{l2}</code>\n\n"
         except:
             continue
     
@@ -586,23 +586,23 @@ async def addadmin_cmd(client, message: Message):
     try:
         uid = int(message.command[1])
         await add_admin(uid)
-        await message.reply(f"<b>✅ {uid} is now admin.</b>")
+        await message.reply(f"<b>✅ {uid} {stylize('is now admin.')}</b>")
     except:
-        await message.reply("<b>Usage: /addadmin {user_id}</b>")
+        await message.reply(f"<b>{stylize('Usage')}: /addadmin {{user_id}}</b>")
 
 @bot.on_message(filters.command('deladmin') & filters.user(OWNER_ID))
 async def deladmin_cmd(client, message: Message):
     try:
         uid = int(message.command[1])
         await remove_admin(uid)
-        await message.reply(f"<b>✅ {uid} removed from admins.</b>")
+        await message.reply(f"<b>✅ {uid} {stylize('removed from admins.')}</b>")
     except:
-        await message.reply("<b>Usage: /deladmin {user_id}</b>")
+        await message.reply(f"<b>{stylize('Usage')}: /deladmin {{user_id}}</b>")
 
 @bot.on_message(filters.command('admins') & filters.user(OWNER_ID))
 async def admins_cmd(client, message: Message):
     admins = await list_admins()
-    text = "<b>👑 Admins:</b>\n" + "\n".join([f"• <code>{a}</code>" for a in admins]) if admins else "<b>No admins.</b>"
+    text = f"<b>👑 {stylize('Admins')}:</b>\n" + "\n".join([f"• <code>{a}</code>" for a in admins]) if admins else f"<b>{stylize('No admins.')}</b>"
     await message.reply(text)
 
 @bot.on_message(filters.command('approveoff') & is_owner_or_admin)
@@ -610,18 +610,18 @@ async def approveoff_cmd(client, message: Message):
     try:
         cid = int(message.command[1])
         await set_approval_off(cid, True)
-        await message.reply(f"<b>✅ Auto-approve OFF for {cid}</b>")
+        await message.reply(f"<b>✅ {stylize('Auto-approve OFF for')} {cid}</b>")
     except:
-        await message.reply("<b>Usage: /approveoff {channel_id}</b>")
+        await message.reply(f"<b>{stylize('Usage')}: /approveoff {{channel_id}}</b>")
 
 @bot.on_message(filters.command('approveon') & is_owner_or_admin)
 async def approveon_cmd(client, message: Message):
     try:
         cid = int(message.command[1])
         await set_approval_off(cid, False)
-        await message.reply(f"<b>✅ Auto-approve ON for {cid}</b>")
+        await message.reply(f"<b>✅ {stylize('Auto-approve ON for')} {cid}</b>")
     except:
-        await message.reply("<b>Usage: /approveon {channel_id}</b>")
+        await message.reply(f"<b>{stylize('Usage')}: /approveon {{channel_id}}</b>")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #                           AUTO APPROVE
@@ -641,7 +641,7 @@ async def auto_approve(client, req: ChatJoinRequest):
         await client.approve_chat_join_request(chat.id, user.id)
         if APPROVED_WELCOME == "on":
             try:
-                await client.send_message(user.id, f"<b>✅ Your request to join {chat.title} has been approved!</b>")
+                await client.send_message(user.id, f"<b>✅ {stylize('Your request to join')} {stylize(chat.title)} {stylize('has been approved!')}</b>")
             except: pass
     except: pass
 
@@ -659,19 +659,19 @@ async def callback_handler(client: Bot, query: CallbackQuery):
     elif data == "about":
         await query.edit_message_media(
             InputMediaPhoto("https://envs.sh/Wdj.jpg", ABOUT_TXT),
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("• Back", callback_data="start")]])
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(stylize("• Back"), callback_data="start")]])
         )
     
     elif data == "channels":
         await query.edit_message_media(
             InputMediaPhoto("https://envs.sh/Wdj.jpg", CHANNELS_TXT),
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("• Back", callback_data="start")]])
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(stylize("• Back"), callback_data="start")]])
         )
     
     elif data == "start":
         btns = InlineKeyboardMarkup([
-            [InlineKeyboardButton("• About", callback_data="about"), InlineKeyboardButton("• Channels", callback_data="channels")],
-            [InlineKeyboardButton("• Close •", callback_data="close")]
+            [InlineKeyboardButton(stylize("• About"), callback_data="about"), InlineKeyboardButton(stylize("• Channels"), callback_data="channels")],
+            [InlineKeyboardButton(stylize("• Close •"), callback_data="close")]
         ])
         try:
             await query.edit_message_media(InputMediaPhoto(START_PIC, START_MSG), reply_markup=btns)
