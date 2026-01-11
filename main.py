@@ -228,6 +228,8 @@ async def get_chat_cached(client, channel_id):
 is_canceled = False
 cancel_lock = asyncio.Lock()
 
+
+class Bot(Client):
 class Bot(Client):
     def __init__(self):
         super().__init__(
@@ -392,7 +394,7 @@ async def start_cmd(client: Bot, message: Message):
                 inv = await client.create_chat_invite_link(channel_id, expire_date=datetime.now() + timedelta(minutes=LINK_EXPIRY), member_limit=1)
             
             invite_link = inv.invite_link
-            btn_text = stylize("» Request to Join «") if is_request else stylize("» Join Channel «")
+            btn_text = stylize("✿ Request to Join ✿") if is_request else stylize("✿ Join Channel ✿")
             btn = InlineKeyboardMarkup([[InlineKeyboardButton(btn_text, url=invite_link)]])
             
             try:
@@ -540,25 +542,41 @@ async def channels_cmd(client: Bot, message: Message):
     await message.reply(text)
 
 @bot.on_message(filters.command('links') & is_owner_or_admin)
-async def links_cmd(client: Bot, message: Message):
+@bot.on_callback_query(filters.regex(r"^links_page_"))
+async def links_handler(client: Bot, update):
+    is_cb = isinstance(update, CallbackQuery)
+    page = int(update.data.split("_")[-1]) if is_cb else 0
+    
     channels = await get_channels()
     if not channels:
-        return await message.reply(f"<b>{stylize('No channels.')}</b>")
+        msg = f"<b>{stylize('No channels.')}</b>"
+        return await (update.answer(msg, show_alert=True) if is_cb else update.reply(msg))
+
+    per_page = 5
+    start, end = page * per_page, (page + 1) * per_page
+    total_pages = (len(channels) + per_page - 1) // per_page
     
-    text = f"<b>🔗 {stylize('All Links')}:</b>\n\n"
-    for i, cid in enumerate(channels[:10], 1):
+    text = f"<b>🔗 {stylize(f'All Links (Page {page+1}/{total_pages})')}</b>\n\n"
+    for i, cid in enumerate(channels[start:end], start + 1):
         try:
             chat = await get_chat_cached(client, cid)
-            enc1 = await save_encoded_link(cid)
-            enc2 = await encode(str(cid))
-            await save_encoded_link2(cid, enc2)
-            l1 = f"https://t.me/{client.username}?start={enc1}"
-            l2 = f"https://t.me/{client.username}?start=req_{enc2}"
+            e1, e2 = await save_encoded_link(cid), await encode(str(cid))
+            await save_encoded_link2(cid, e2)
+            l1, l2 = f"https://t.me/{client.username}?start={e1}", f"https://t.me/{client.username}?start=req_{e2}"
             text += f"<b>{i}. {stylize(chat.title)}</b>\n• {stylize('Normal')}: <code>{l1}</code>\n• {stylize('Request')}: <code>{l2}</code>\n\n"
-        except:
-            continue
+        except: continue
+        
+    btns = []
+    if page > 0: btns.append(InlineKeyboardButton(stylize("« Back"), callback_data=f"links_page_{page-1}"))
+    if end < len(channels): btns.append(InlineKeyboardButton(stylize("Next »"), callback_data=f"links_page_{page+1}"))
     
-    await message.reply(text)
+    rows = [btns] if btns else []
+    rows.append([InlineKeyboardButton(stylize("• Close •"), callback_data="close")])
+    kb = InlineKeyboardMarkup(rows)
+    try:
+        if is_cb: await update.edit_message_text(text, reply_markup=kb)
+        else: await update.reply(text, reply_markup=kb)
+    except: pass
 
 @bot.on_message(filters.command('addadmin') & filters.user(OWNER_ID))
 async def addadmin_cmd(client, message: Message):
