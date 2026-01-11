@@ -35,12 +35,16 @@ APPROVED_WELCOME = "on"
 APPROVAL_WAIT_TIME = 5
 
 START_PIC = "https://telegra.ph/file/f3d3aff9ec422158feb05-d2180e3665e0ac4d32.jpg"
-START_MSG = "<b>ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ ᴀᴅᴠᴀɴᴄᴇᴅ ʟɪɴᴋs sʜᴀʀɪɴɢ ʙᴏᴛ.</b>"
-ABOUT_TXT = "<b>›› Maintained by: @DshDm_bot</b>"
-CHANNELS_TXT = "<b>›› Our Channels</b>"
+START_MSG = "<b>𝗐𝖾𝗅𝖼𝗈𝗆𝖾 𝗍𝗈 𝗍𝗁𝖾 𝖺𝖽𝗏𝖺𝗇𝖼𝖾𝖽 𝗅𝗂𝗇𝗄𝗌 𝗌𝗁𝖺𝗋𝗂𝗇𝗀 𝖻𝗈𝗍.</b>"
+ABOUT_TXT = "<b>›› 𝖬𝖺𝗂𝗇𝗍𝖺𝗂𝗇𝖾𝖽 𝖻𝗒: @DshDm_bot</b>"
+CHANNELS_TXT = "<b>›› 𝖮𝗎𝗋 𝖢𝗁𝖺𝗇𝗇𝖾𝗅𝗌</b>"
 
-# React emojis for /start
-REACT_EMOJIS = ["😘", "👾", "🤝", "👀", "❤️‍🔥", "💘", "😍", "😇", "🕊️", "🐳", "🎉", "🏆", "🗿", "⚡", "💯", "👌", "🍾"]
+D = ["😘", "👾", "🤝", "👀", "❤️‍🔥", "💘", "😍", "😇", "🕊️", "🐳", "🎉", "🏆", "🗿", "⚡", "💯", "👌", "🍾"]
+
+def stylize(text):
+    normal = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    styled = "𝖠𝖡𝖢𝖣𝖤𝖥𝖦𝖧𝖨𝖩𝖪𝖫𝖬𝖭𝖮𝖯𝖰𝖱𝖲𝖳𝖴𝖵𝖶𝖷𝖸𝖹𝖺𝖻𝖼𝖽𝖾𝖿𝗀𝗁𝗂𝗃𝗄𝗅𝗆𝗇𝗈𝗉𝗊𝗋𝗌𝗍𝗎𝗏𝗐𝗑𝗒𝗓𝟢𝟣𝟤𝟥𝟦𝟧𝟨𝟩𝟪𝟫"
+    return text.translate(str.maketrans(normal, styled))
 
 def get_random_effect():
     EFFECT_IDS = [5104841245755180586, 5159385139981059251, 5046509860389126442]
@@ -384,6 +388,10 @@ async def start_cmd(client: Bot, message: Message):
     user_id = message.from_user.id
     await add_user(user_id)
     
+    # React to user's /start message
+    try: await message.react(random.choice(D))
+    except: pass
+    
     text = message.text
     if len(text) > 7:
         try:
@@ -425,49 +433,24 @@ async def start_cmd(client: Bot, message: Message):
                     is_req = is_request
                     await save_invite_link(channel_id, invite_link, is_req)
             
-            btn_text = "• Request to Join •" if is_req else "• Join Channel •"
+            btn_text = stylize("• Request to Join •") if is_req else stylize("• Join Channel •")
             btn = InlineKeyboardMarkup([[InlineKeyboardButton(btn_text, url=invite_link)]])
+            channel_name = stylize((await get_chat_cached(client, channel_id)).title) if channel_id else stylize("Here is your link!")
             
-            try:
-                chat = await get_chat_cached(client, channel_id)
-                channel_name = chat.title
-            except:
-                channel_name = "✅ Here is your link!"
-            
-            # React to user's message
-            try:
-                await client.send_reaction(message.chat.id, message.id, random.choice(REACT_EMOJIS))
-            except: pass
-            
-            # Send with effect
-            try:
-                await message.reply(f"<b>{channel_name}</b>", reply_markup=btn, effect_id=get_random_effect())
-            except:
-                await message.reply(f"<b>{channel_name}</b>", reply_markup=btn)
+            try: await message.reply(f"<b>✅ {channel_name}</b>", reply_markup=btn, effect_id=get_random_effect())
+            except: await message.reply(f"<b>✅ {channel_name}</b>", reply_markup=btn)
             
             asyncio.create_task(revoke_invite_after_delay(client, channel_id, invite_link, 300))
             
         except Exception as e:
-            await message.reply(f"<b>❌ Error: {e}</b>")
+            await message.reply(f"<b>❌ {stylize('Error')}: {e}</b>")
     else:
         btns = InlineKeyboardMarkup([
-            [InlineKeyboardButton("• About", callback_data="about"), InlineKeyboardButton("• Channels", callback_data="channels")],
-            [InlineKeyboardButton("• Close •", callback_data="close")]
+            [InlineKeyboardButton(stylize("• About"), callback_data="about"), InlineKeyboardButton(stylize("• Channels"), callback_data="channels")],
+            [InlineKeyboardButton(stylize("• Close •"), callback_data="close")]
         ])
-        
-        # React to user's message
-        try:
-            await client.send_reaction(message.chat.id, message.id, random.choice(REACT_EMOJIS))
-        except: pass
-        
-        # Send with effect
-        try:
-            await message.reply_photo(START_PIC, caption=START_MSG, reply_markup=btns, effect_id=get_random_effect())
-        except:
-            try:
-                await message.reply_photo(START_PIC, caption=START_MSG, reply_markup=btns)
-            except:
-                await message.reply(START_MSG, reply_markup=btns)
+        try: await message.reply_photo(START_PIC, caption=START_MSG, reply_markup=btns, effect_id=get_random_effect())
+        except: await message.reply_photo(START_PIC, caption=START_MSG, reply_markup=btns)
 
 @bot.on_message(filters.command('status') & filters.private & is_owner_or_admin)
 async def status_cmd(client: Bot, message: Message):
