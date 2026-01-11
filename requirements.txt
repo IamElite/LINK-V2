@@ -1,4 +1,6 @@
-pyrogram
+
 tgcrypto
 motor
 aiohttp
+
+https://github.com/IamDvis/pyrogram/archive/dvis.zip
