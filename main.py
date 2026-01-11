@@ -432,9 +432,18 @@ async def start_cmd(client: Bot, message: Message):
                 chat = await get_chat_cached(client, channel_id)
                 channel_name = chat.title
             except:
-                channel_name = "<b>✅ Here is your link!</b>"
+                channel_name = "✅ Here is your link!"
             
-            await message.reply(f"<b>{channel_name}</b>", reply_markup=btn)
+            # React to user's message
+            try:
+                await client.send_reaction(message.chat.id, message.id, random.choice(REACT_EMOJIS))
+            except: pass
+            
+            # Send with effect
+            try:
+                await message.reply(f"<b>{channel_name}</b>", reply_markup=btn, effect_id=get_random_effect())
+            except:
+                await message.reply(f"<b>{channel_name}</b>", reply_markup=btn)
             
             asyncio.create_task(revoke_invite_after_delay(client, channel_id, invite_link, 300))
             
