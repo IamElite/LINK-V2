@@ -242,8 +242,8 @@ class Bot(Client):
     async def start(self, *args, **kwargs):
         await super().start()
         self.uptime = datetime.now()
-        me = await self.get_me()
-        self.username = me.username
+        self.me = await self.get_me()
+        self.username = self.me.username
         self.set_parse_mode(ParseMode.HTML)
         
         try:
@@ -266,6 +266,7 @@ bot = Bot()
 
 @bot.on_chat_member_updated(filters.group | filters.channel)
 async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
+    LOGGER(__name__).info("ChatMemberUpdated event received")
     try:
         new_member = update.new_chat_member
         old_member = update.old_chat_member
@@ -273,7 +274,7 @@ async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
         
         if not new_member: return
         
-        me = await client.get_me() if not hasattr(client, "me") else client.me
+        me = client.me if hasattr(client, "me") else await client.get_me()
         if new_member.user.id != me.id: return
         
         LOGGER(__name__).info(f"ChatMemberUpdated triggered for {chat.title} ({chat.id}) | Status: {new_member.status}")
@@ -389,7 +390,7 @@ async def start_cmd(client: Bot, message: Message):
                 inv = await client.create_chat_invite_link(channel_id, expire_date=datetime.now() + timedelta(minutes=LINK_EXPIRY), member_limit=1)
             
             invite_link = inv.invite_link
-            btn_text = stylize("• Request to Join •") if is_request else stylize("• Join Channel •")
+            btn_text = stylize("» Request to Join «") if is_request else stylize("» Join Channel «")
             btn = InlineKeyboardMarkup([[InlineKeyboardButton(btn_text, url=invite_link)]])
             
             try:
@@ -399,9 +400,9 @@ async def start_cmd(client: Bot, message: Message):
                 channel_name = stylize("Click below to join!")
             
             try: 
-                sent = await message.reply(f"<b>✅ {channel_name}</b>", reply_markup=btn, effect_id=get_random_effect(), protect_content=True)
+                sent = await message.reply(f"<b>{channel_name}</b>", reply_markup=btn, effect_id=get_random_effect(), protect_content=True)
             except: 
-                sent = await message.reply(f"<b>✅ {channel_name}</b>", reply_markup=btn, protect_content=True)
+                sent = await message.reply(f"<b>{channel_name}</b>", reply_markup=btn, protect_content=True)
             
             await users_col.update_one(
                 {"user_id": user_id},
