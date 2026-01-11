@@ -448,12 +448,12 @@ async def start_cmd(client: Bot, message: Message):
         
         # React to user's message
         try:
-            await message.react(random.choice(REACT_EMOJIS))
+            await client.send_reaction(message.chat.id, message.id, random.choice(REACT_EMOJIS))
         except: pass
         
         # Send with effect
         try:
-            await message.reply_photo(START_PIC, caption=START_MSG, reply_markup=btns, message_effect_id=get_random_effect())
+            await client.send_photo(message.chat.id, START_PIC, caption=START_MSG, reply_markup=btns, message_effect_id=get_random_effect(), reply_to_message_id=message.id)
         except:
             try:
                 await message.reply_photo(START_PIC, caption=START_MSG, reply_markup=btns)
