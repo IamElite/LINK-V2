@@ -9,7 +9,7 @@ import pyrogram.utils
 from aiohttp import web
 from pyrogram import Client, filters, idle
 from pyrogram.enums import ParseMode, ChatMemberStatus
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto, ChatJoinRequest
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto, ChatJoinRequest, ChatMemberUpdated
 from pyrogram.errors import FloodWait, UserNotParticipant, UserIsBlocked, InputUserDeactivated, ChatAdminRequired, RPCError
 from pyrogram.filters import Filter
 
@@ -263,6 +263,69 @@ class Bot(Client):
         LOGGER(__name__).info("Bot stopped.")
 
 bot = Bot()
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#                           AUTO ADD CHANNEL
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@bot.on_chat_member_updated(filters.channel)
+async def auto_add_channel(client: Bot, update: ChatMemberUpdated):
+    # Check if bot was added as admin
+    if not update.new_chat_member:
+        return
+    
+    new_member = update.new_chat_member
+    
+    # Check if the update is about the bot itself
+    me = await client.get_me()
+    if new_member.user.id != me.id:
+        return
+    
+    # Check if bot is now an admin
+    if new_member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
+        return
+    
+    # Check if the person who added is an admin/owner
+    if update.from_user:
+        adder_id = update.from_user.id
+        if adder_id != OWNER_ID and adder_id not in ADMINS and not await is_admin(adder_id):
+            return
+    
+    channel_id = update.chat.id
+    channel_title = update.chat.title
+    
+    # Check if already added
+    existing = await channels_col.find_one({"channel_id": channel_id, "status": "active"})
+    if existing:
+        return
+    
+    try:
+        # Save channel
+        await save_channel(channel_id)
+        enc1 = await save_encoded_link(channel_id)
+        enc2 = await encode(str(channel_id))
+        await save_encoded_link2(channel_id, enc2)
+        
+        link1 = f"https://t.me/{client.username}?start={enc1}"
+        link2 = f"https://t.me/{client.username}?start=req_{enc2}"
+        
+        # Send to DATABASE_CHANNEL
+        msg = f"""<b>📢 New Channel Added!</b>
+
+<b>📌 Name:</b> {channel_title}
+<b>🆔 ID:</b> <code>{channel_id}</code>
+
+<b>🔗 Normal Link:</b>
+<code>{link1}</code>
+
+<b>🔗 Request Link:</b>
+<code>{link2}</code>"""
+        
+        await client.send_message(DATABASE_CHANNEL, msg)
+        LOGGER(__name__).info(f"Auto-added channel: {channel_title} ({channel_id})")
+        
+    except Exception as e:
+        LOGGER(__name__).error(f"Auto-add failed for {channel_id}: {e}")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #                               COMMANDS
