@@ -230,7 +230,6 @@ cancel_lock = asyncio.Lock()
 
 
 class Bot(Client):
-class Bot(Client):
     def __init__(self):
         super().__init__(
             name="Bot",
