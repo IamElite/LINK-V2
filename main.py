@@ -1,4 +1,4 @@
-import os, asyncio, base64, time, logging, re
+import os, asyncio, base64, time, logging, re, random
 from datetime import datetime, timedelta
 from collections import defaultdict
 from typing import List, Optional
@@ -38,6 +38,13 @@ START_PIC = "https://telegra.ph/file/f3d3aff9ec422158feb05-d2180e3665e0ac4d32.jp
 START_MSG = "<b>ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ᴛʜᴇ ᴀᴅᴠᴀɴᴄᴇᴅ ʟɪɴᴋs sʜᴀʀɪɴɢ ʙᴏᴛ.</b>"
 ABOUT_TXT = "<b>›› Maintained by: @DshDm_bot</b>"
 CHANNELS_TXT = "<b>›› Our Channels</b>"
+
+# React emojis for /start
+REACT_EMOJIS = ["😘", "👾", "🤝", "👀", "❤️‍🔥", "💘", "😍", "😇", "🕊️", "🐳", "🎉", "🏆", "🗿", "⚡", "💯", "👌", "🍾"]
+
+def get_random_effect():
+    EFFECT_IDS = [5104841245755180586, 5159385139981059251, 5046509860389126442]
+    return random.choice(EFFECT_IDS)
 
 try:
     ADMINS = [int(x) for x in os.environ.get("ADMINS", "1679112664 7163796885 6604184902 7737229061").split() if x.isdigit()]
@@ -438,10 +445,20 @@ async def start_cmd(client: Bot, message: Message):
             [InlineKeyboardButton("• About", callback_data="about"), InlineKeyboardButton("• Channels", callback_data="channels")],
             [InlineKeyboardButton("• Close •", callback_data="close")]
         ])
+        
+        # React to user's message
         try:
-            await message.reply_photo(START_PIC, caption=START_MSG, reply_markup=btns)
+            await message.react(random.choice(REACT_EMOJIS))
+        except: pass
+        
+        # Send with effect
+        try:
+            await message.reply_photo(START_PIC, caption=START_MSG, reply_markup=btns, message_effect_id=get_random_effect())
         except:
-            await message.reply(START_MSG, reply_markup=btns)
+            try:
+                await message.reply_photo(START_PIC, caption=START_MSG, reply_markup=btns)
+            except:
+                await message.reply(START_MSG, reply_markup=btns)
 
 @bot.on_message(filters.command('status') & filters.private & is_owner_or_admin)
 async def status_cmd(client: Bot, message: Message):
