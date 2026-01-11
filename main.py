@@ -453,7 +453,7 @@ async def start_cmd(client: Bot, message: Message):
         
         # Send with effect
         try:
-            await client.send_photo(message.chat.id, START_PIC, caption=START_MSG, reply_markup=btns, message_effect_id=get_random_effect(), reply_to_message_id=message.id)
+            await message.reply_photo(START_PIC, caption=START_MSG, reply_markup=btns, effect_id=get_random_effect())
         except:
             try:
                 await message.reply_photo(START_PIC, caption=START_MSG, reply_markup=btns)
