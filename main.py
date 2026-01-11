@@ -29,7 +29,7 @@ DATABASE_CHANNEL = -1003104736593
 CHAT_ID = []
 APPROVED_WELCOME = "on"
 APPROVAL_WAIT_TIME = 5
-LINK_EXPIRY = 5
+LINK_EXPIRY = 1
 
 START_PIC = "https://telegra.ph/file/f3d3aff9ec422158feb05-d2180e3665e0ac4d32.jpg"
 START_MSG = "<b>𝗐𝖾𝗅𝖼𝗈𝗆𝖾 𝗍𝗈 𝗍𝗁𝖾 𝖺𝖽𝗏𝖺𝗇𝖼𝖾𝖽 𝗅𝗂𝗇𝗄𝗌 𝗌𝗁𝖺𝗋𝗂𝗇𝗀 𝖻𝗈𝗍.</b>"
