@@ -198,9 +198,16 @@ async def revoke_invite_after_delay(client, channel_id: int, link: str, delay: i
     await asyncio.sleep(delay)
     try:
         await client.revoke_chat_invite_link(channel_id, link)
-        print(f"Link revoked for {channel_id}")
-    except Exception as e:
-        print(f"Revoke failed for {channel_id}: {e}")
+        LOGGER(__name__).info(f"Link revoked for {channel_id}")
+    except RPCError as e:
+        # If channel is private/inaccessible, remove from database
+        if "CHANNEL_PRIVATE" in str(e) or "CHAT_ADMIN_REQUIRED" in str(e):
+            await delete_channel(channel_id)
+            LOGGER(__name__).warning(f"Channel {channel_id} removed - no longer accessible")
+        else:
+            LOGGER(__name__).debug(f"Revoke skipped for {channel_id}: {e}")
+    except:
+        pass
 
 async def auto_delete(msg, delay: int):
     await asyncio.sleep(delay)
