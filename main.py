@@ -282,10 +282,11 @@ async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
         
         LOGGER(__name__).info(f"Chat member update: {channel_title} | Old: {old_member.status if old_member else 'None'} | New: {new_member.status}")
         
-        was_admin = old_member and old_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
-        is_not_admin_now = new_member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
+        is_removed = new_member.status in [ChatMemberStatus.LEFT, ChatMemberStatus.BANNED]
+        was_admin = old_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER] if old_member else False
+        is_demoted = was_admin and new_member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
         
-        if was_admin and is_not_admin_now:
+        if is_removed or is_demoted:
             try:
                 ch_data = await channels_col.find_one({"channel_id": channel_id})
                 if ch_data and "db_message_id" in ch_data:
