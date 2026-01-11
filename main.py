@@ -16,10 +16,6 @@ from pyrogram.filters import Filter
 pyrogram.utils.MIN_CHANNEL_ID = -1009147483647
 id_pattern = re.compile(r'^.\d+$')
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#                               CONFIG
-# ═══════════════════════════════════════════════════════════════════════════════
-
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 API_ID = 14050586
 API_HASH = "42a60d9c657b106370c79bb0a8ac560c"
@@ -33,6 +29,7 @@ DATABASE_CHANNEL = -1003104736593
 CHAT_ID = []
 APPROVED_WELCOME = "on"
 APPROVAL_WAIT_TIME = 5
+LINK_EXPIRY = 5
 
 START_PIC = "https://telegra.ph/file/f3d3aff9ec422158feb05-d2180e3665e0ac4d32.jpg"
 START_MSG = "<b>𝗐𝖾𝗅𝖼𝗈𝗆𝖾 𝗍𝗈 𝗍𝗁𝖾 𝖺𝖽𝗏𝖺𝗇𝖼𝖾𝖽 𝗅𝗂𝗇𝗄𝗌 𝗌𝗁𝖺𝗋𝗂𝗇𝗀 𝖻𝗈𝗍.</b>"
@@ -66,10 +63,6 @@ logging.basicConfig(
 )
 logging.getLogger("pyrogram").setLevel(logging.WARNING)
 LOGGER = lambda name: logging.getLogger(name)
-
-# ═══════════════════════════════════════════════════════════════════════════════
-#                               DATABASE
-# ═══════════════════════════════════════════════════════════════════════════════
 
 dbclient = motor.motor_asyncio.AsyncIOMotorClient(DB_URI)
 db = dbclient[DB_NAME]
@@ -179,10 +172,6 @@ async def get_fsub_channels() -> List[int]:
     channels = await fsub_col.find({'status': 'active'}).to_list(None)
     return [c['channel_id'] for c in channels if 'channel_id' in c]
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#                               HELPERS
-# ═══════════════════════════════════════════════════════════════════════════════
-
 class IsOwnerOrAdmin(Filter):
     async def __call__(self, _, message):
         uid = message.from_user.id
@@ -211,7 +200,6 @@ async def revoke_invite_after_delay(client, channel_id: int, link: str, delay: i
         await client.revoke_chat_invite_link(channel_id, link)
         LOGGER(__name__).info(f"Link revoked for {channel_id}")
     except RPCError as e:
-        # If channel is private/inaccessible, remove from database
         if "CHANNEL_PRIVATE" in str(e) or "CHAT_ADMIN_REQUIRED" in str(e):
             await delete_channel(channel_id)
             LOGGER(__name__).warning(f"Channel {channel_id} removed - no longer accessible")
@@ -225,7 +213,6 @@ async def auto_delete(msg, delay: int):
     try: await msg.delete()
     except: pass
 
-# Cache
 channel_locks = defaultdict(asyncio.Lock)
 chat_cache = {}
 
@@ -238,13 +225,8 @@ async def get_chat_cached(client, channel_id):
     chat_cache[channel_id] = (info, datetime.now())
     return info
 
-# Broadcast state
 is_canceled = False
 cancel_lock = asyncio.Lock()
-
-# ═══════════════════════════════════════════════════════════════════════════════
-#                               BOT CLASS
-# ═══════════════════════════════════════════════════════════════════════════════
 
 class Bot(Client):
     def __init__(self):
@@ -282,10 +264,6 @@ class Bot(Client):
 
 bot = Bot()
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#                           AUTO ADD/REMOVE CHANNEL
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @bot.on_chat_member_updated(filters.channel)
 async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
     try:
@@ -295,7 +273,6 @@ async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
         if not new_member:
             return
         
-        # Check if the update is about the bot itself
         me = await client.get_me()
         if new_member.user.id != me.id:
             return
@@ -305,20 +282,17 @@ async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
         
         LOGGER(__name__).info(f"Chat member update: {channel_title} | Old: {old_member.status if old_member else 'None'} | New: {new_member.status}")
         
-        # BOT REMOVED/DEMOTED - Delete from DB and remove message
         was_admin = old_member and old_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
         is_not_admin_now = new_member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
         
         if was_admin and is_not_admin_now:
             try:
-                # Get stored message_id
                 ch_data = await channels_col.find_one({"channel_id": channel_id})
                 if ch_data and "db_message_id" in ch_data:
                     try:
                         await client.delete_messages(DATABASE_CHANNEL, ch_data["db_message_id"])
                     except: pass
                 
-                # Delete from database
                 await delete_channel(channel_id)
                 LOGGER(__name__).info(f"Auto-removed channel: {channel_title} ({channel_id})")
                 
@@ -326,23 +300,19 @@ async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
                 LOGGER(__name__).error(f"Auto-remove failed for {channel_id}: {e}")
             return
     
-        # BOT ADDED AS ADMIN - Add to DB
         if new_member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
             return
         
-        # Check if the person who added is an admin/owner
         if update.from_user:
             adder_id = update.from_user.id
             if adder_id != OWNER_ID and adder_id not in ADMINS and not await is_admin(adder_id):
                 return
         
-        # Check if already added
         existing = await channels_col.find_one({"channel_id": channel_id, "status": "active"})
         if existing:
             return
         
         try:
-            # Save channel
             await save_channel(channel_id)
             enc1 = await save_encoded_link(channel_id)
             enc2 = await encode(str(channel_id))
@@ -351,21 +321,10 @@ async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
             link1 = f"https://t.me/{client.username}?start={enc1}"
             link2 = f"https://t.me/{client.username}?start=req_{enc2}"
             
-            # Send to DATABASE_CHANNEL
-            msg_text = f"""<b>📢 New Channel Added!</b>
-
-<b>📌 Name:</b> {channel_title}
-<b>🆔 ID:</b> <code>{channel_id}</code>
-
-<b>🔗 Normal Link:</b>
-<code>{link1}</code>
-
-<b>🔗 Request Link:</b>
-<code>{link2}</code>"""
+            msg_text = f"<b>📢 New Channel Added!</b>\n\n<b>📌 Name:</b> {channel_title}\n<b>🆔 ID:</b> <code>{channel_id}</code>\n\n<b>🔗 Normal Link:</b>\n<code>{link1}</code>\n\n<b>🔗 Request Link:</b>\n<code>{link2}</code>"
             
             sent_msg = await client.send_message(DATABASE_CHANNEL, msg_text)
             
-            # Store message_id for future deletion
             await channels_col.update_one(
                 {"channel_id": channel_id},
                 {"$set": {"db_message_id": sent_msg.id}}
@@ -379,16 +338,34 @@ async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
     except Exception as e:
         LOGGER(__name__).error(f"ChatMemberUpdated handler error: {e}")
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#                               COMMANDS
-# ═══════════════════════════════════════════════════════════════════════════════
+@bot.on_chat_member_updated(filters.channel)
+async def auto_delete_on_join(client: Bot, update: ChatMemberUpdated):
+    try:
+        new_member = update.new_chat_member
+        if not new_member:
+            return
+        
+        if new_member.status not in [ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
+            return
+        
+        user_id = new_member.user.id
+        channel_id = update.chat.id
+        
+        user_data = await users_col.find_one({"user_id": user_id})
+        if user_data and "pending_join" in user_data:
+            pending = user_data["pending_join"]
+            if pending.get("channel_id") == channel_id and not pending.get("is_request"):
+                try:
+                    await client.delete_messages(user_id, pending["msg_id"])
+                except: pass
+                await users_col.update_one({"user_id": user_id}, {"$unset": {"pending_join": ""}})
+    except: pass
 
 @bot.on_message(filters.command('start') & filters.private)
 async def start_cmd(client: Bot, message: Message):
     user_id = message.from_user.id
     await add_user(user_id)
     
-    # React to user's /start message
     try: await message.react(random.choice(D))
     except: pass
     
@@ -411,36 +388,33 @@ async def start_cmd(client: Bot, message: Message):
                 btn = InlineKeyboardMarkup([[InlineKeyboardButton(stylize("• Open Link •"), url=orig)]])
                 return await message.reply(f"<b>✅ {stylize('Here is your link!')}</b>", reply_markup=btn)
             
-            async with channel_locks[channel_id]:
-                old = await get_current_invite_link(channel_id)
-                now = datetime.now()
-                
-                if old:
-                    created = await get_link_creation_time(channel_id)
-                    if created and (now - created).total_seconds() < 240:
-                        invite_link = old["invite_link"]
-                        is_req = old["is_request"]
-                    else:
-                        try: await client.revoke_chat_invite_link(channel_id, old["invite_link"])
-                        except: pass
-                        inv = await client.create_chat_invite_link(channel_id, expire_date=now + timedelta(minutes=10), creates_join_request=is_request)
-                        invite_link = inv.invite_link
-                        is_req = is_request
-                        await save_invite_link(channel_id, invite_link, is_req)
-                else:
-                    inv = await client.create_chat_invite_link(channel_id, expire_date=now + timedelta(minutes=10), creates_join_request=is_request)
-                    invite_link = inv.invite_link
-                    is_req = is_request
-                    await save_invite_link(channel_id, invite_link, is_req)
+            if is_request:
+                inv = await client.create_chat_invite_link(channel_id, expire_date=datetime.now() + timedelta(minutes=LINK_EXPIRY), creates_join_request=True)
+            else:
+                inv = await client.create_chat_invite_link(channel_id, expire_date=datetime.now() + timedelta(minutes=LINK_EXPIRY), member_limit=1)
             
-            btn_text = stylize("• Request to Join •") if is_req else stylize("• Join Channel •")
+            invite_link = inv.invite_link
+            btn_text = stylize("• Request to Join •") if is_request else stylize("• Join Channel •")
             btn = InlineKeyboardMarkup([[InlineKeyboardButton(btn_text, url=invite_link)]])
-            channel_name = stylize((await get_chat_cached(client, channel_id)).title) if channel_id else stylize("Here is your link!")
             
-            try: await message.reply(f"<b>✅ {channel_name}</b>", reply_markup=btn, effect_id=get_random_effect())
-            except: await message.reply(f"<b>✅ {channel_name}</b>", reply_markup=btn)
+            try:
+                chat = await get_chat_cached(client, channel_id)
+                channel_name = stylize(chat.title)
+            except:
+                channel_name = stylize("Click below to join!")
             
-            asyncio.create_task(revoke_invite_after_delay(client, channel_id, invite_link, 300))
+            try: 
+                sent = await message.reply(f"<b>✅ {channel_name}</b>", reply_markup=btn, effect_id=get_random_effect(), protect_content=True)
+            except: 
+                sent = await message.reply(f"<b>✅ {channel_name}</b>", reply_markup=btn, protect_content=True)
+            
+            await users_col.update_one(
+                {"user_id": user_id},
+                {"$set": {"pending_join": {"channel_id": channel_id, "msg_id": sent.id, "is_request": is_request}}},
+                upsert=True
+            )
+            
+            asyncio.create_task(auto_delete(sent, LINK_EXPIRY * 60))
             
         except Exception as e:
             await message.reply(f"<b>❌ {stylize('Error')}: {e}</b>")
@@ -623,10 +597,6 @@ async def approveon_cmd(client, message: Message):
     except:
         await message.reply(f"<b>{stylize('Usage')}: /approveon {{channel_id}}</b>")
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#                           AUTO APPROVE
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @bot.on_chat_join_request((filters.group | filters.channel) & filters.chat(CHAT_ID) if CHAT_ID else (filters.group | filters.channel))
 async def auto_approve(client, req: ChatJoinRequest):
     chat = req.chat
@@ -639,15 +609,21 @@ async def auto_approve(client, req: ChatJoinRequest):
     
     try:
         await client.approve_chat_join_request(chat.id, user.id)
+        
+        user_data = await users_col.find_one({"user_id": user.id})
+        if user_data and "pending_join" in user_data:
+            pending = user_data["pending_join"]
+            if pending.get("channel_id") == chat.id:
+                try:
+                    await client.delete_messages(user.id, pending["msg_id"])
+                except: pass
+                await users_col.update_one({"user_id": user.id}, {"$unset": {"pending_join": ""}})
+        
         if APPROVED_WELCOME == "on":
             try:
-                await client.send_message(user.id, f"<b>✅ {stylize('Your request to join')} {stylize(chat.title)} {stylize('has been approved!')}</b>")
+                await client.send_message(user.id, f"<b>✅ {stylize('You have been added!')}</b>")
             except: pass
     except: pass
-
-# ═══════════════════════════════════════════════════════════════════════════════
-#                           CALLBACKS
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @bot.on_callback_query()
 async def callback_handler(client: Bot, query: CallbackQuery):
@@ -677,10 +653,6 @@ async def callback_handler(client: Bot, query: CallbackQuery):
             await query.edit_message_media(InputMediaPhoto(START_PIC, START_MSG), reply_markup=btns)
         except:
             await query.edit_message_text(START_MSG, reply_markup=btns)
-
-# ═══════════════════════════════════════════════════════════════════════════════
-#                               RUN
-# ═══════════════════════════════════════════════════════════════════════════════
 
 async def start_bot():
     try:
