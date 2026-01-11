@@ -352,7 +352,9 @@ async def auto_delete_on_join(client: Bot, update: ChatMemberUpdated):
             pending = user_data["pending_join"]
             if pending.get("channel_id") == channel_id and not pending.get("is_request"):
                 try:
-                    await client.delete_messages(user_id, pending["msg_id"])
+                    msgs = [pending["msg_id"]]
+                    if "notice_id" in pending: msgs.append(pending["notice_id"])
+                    await client.delete_messages(user_id, msgs)
                 except: pass
                 await users_col.update_one({"user_id": user_id}, {"$unset": {"pending_join": ""}})
     except: pass
@@ -404,13 +406,20 @@ async def start_cmd(client: Bot, message: Message):
             except: 
                 sent = await message.reply(f"<b>{channel_name}</b>", reply_markup=btn, protect_content=True)
             
+            notice_text = f"<b><i>{stylize(f'This link will be dead in {LINK_EXPIRY} min and this message will be deleted.')}</i></b>"
+            try:
+                sent_notice = await message.reply(notice_text, protect_content=True)
+            except:
+                sent_notice = await message.reply(notice_text)
+            
             await users_col.update_one(
                 {"user_id": user_id},
-                {"$set": {"pending_join": {"channel_id": channel_id, "msg_id": sent.id, "is_request": is_request}}},
+                {"$set": {"pending_join": {"channel_id": channel_id, "msg_id": sent.id, "notice_id": sent_notice.id, "is_request": is_request}}},
                 upsert=True
             )
             
             asyncio.create_task(auto_delete(sent, LINK_EXPIRY * 60))
+            asyncio.create_task(auto_delete(sent_notice, LINK_EXPIRY * 60))
             
         except Exception as e:
             await message.reply(f"<b>❌ {stylize('Error')}: {e}</b>")
@@ -611,7 +620,9 @@ async def auto_approve(client, req: ChatJoinRequest):
             pending = user_data["pending_join"]
             if pending.get("channel_id") == chat.id:
                 try:
-                    await client.delete_messages(user.id, pending["msg_id"])
+                    msgs = [pending["msg_id"]]
+                    if "notice_id" in pending: msgs.append(pending["notice_id"])
+                    await client.delete_messages(user.id, msgs)
                 except: pass
                 await users_col.update_one({"user_id": user.id}, {"$unset": {"pending_join": ""}})
         
