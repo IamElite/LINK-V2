@@ -264,41 +264,36 @@ class Bot(Client):
 
 bot = Bot()
 
-@bot.on_chat_member_updated(filters.channel)
+@bot.on_chat_member_updated(filters.group | filters.channel)
 async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
     try:
         new_member = update.new_chat_member
         old_member = update.old_chat_member
+        chat = update.chat
         
-        if not new_member:
-            return
+        if not new_member: return
         
-        me = await client.get_me()
-        if new_member.user.id != me.id:
-            return
+        me = await client.get_me() if not hasattr(client, "me") else client.me
+        if new_member.user.id != me.id: return
         
-        channel_id = update.chat.id
-        channel_title = update.chat.title
+        LOGGER(__name__).info(f"ChatMemberUpdated triggered for {chat.title} ({chat.id}) | Status: {new_member.status}")
         
-        LOGGER(__name__).info(f"Chat member update: {channel_title} | Old: {old_member.status if old_member else 'None'} | New: {new_member.status}")
-        
-        is_removed = new_member.status in [ChatMemberStatus.LEFT, ChatMemberStatus.BANNED]
-        was_admin = old_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER] if old_member else False
+        is_removed = new_member.status in [ChatMemberStatus.LEFT, ChatMemberStatus.BANNED, ChatMemberStatus.RESTRICTED]
+        was_admin = old_member and old_member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
         is_demoted = was_admin and new_member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
         
         if is_removed or is_demoted:
             try:
-                ch_data = await channels_col.find_one({"channel_id": channel_id})
-                if ch_data and "db_message_id" in ch_data:
-                    try:
-                        await client.delete_messages(DATABASE_CHANNEL, ch_data["db_message_id"])
-                    except: pass
-                
-                await delete_channel(channel_id)
-                LOGGER(__name__).info(f"Auto-removed channel: {channel_title} ({channel_id})")
-                
+                ch_data = await channels_col.find_one({"channel_id": chat.id})
+                if ch_data:
+                    if "db_message_id" in ch_data:
+                        try: await client.delete_messages(DATABASE_CHANNEL, ch_data["db_message_id"])
+                        except Exception as e: LOGGER(__name__).error(f"Failed to delete DB msg: {e}")
+                    
+                    await delete_channel(chat.id)
+                    LOGGER(__name__).info(f"Successfully cleaned up data for {chat.title} ({chat.id}) | Reason: {'Removed/Banned' if is_removed else 'Demoted'}")
             except Exception as e:
-                LOGGER(__name__).error(f"Auto-remove failed for {channel_id}: {e}")
+                LOGGER(__name__).error(f"Cleanup error for {chat.id}: {e}")
             return
     
         if new_member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
@@ -309,29 +304,28 @@ async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
             if adder_id != OWNER_ID and adder_id not in ADMINS and not await is_admin(adder_id):
                 return
         
-        existing = await channels_col.find_one({"channel_id": channel_id, "status": "active"})
-        if existing:
-            return
+        existing = await channels_col.find_one({"channel_id": chat.id, "status": "active"})
+        if existing: return
         
         try:
-            await save_channel(channel_id)
-            enc1 = await save_encoded_link(channel_id)
-            enc2 = await encode(str(channel_id))
-            await save_encoded_link2(channel_id, enc2)
+            await save_channel(chat.id)
+            enc1 = await save_encoded_link(chat.id)
+            enc2 = await encode(str(chat.id))
+            await save_encoded_link2(chat.id, enc2)
             
             link1 = f"https://t.me/{client.username}?start={enc1}"
             link2 = f"https://t.me/{client.username}?start=req_{enc2}"
             
-            msg_text = f"<b>📢 New Channel Added!</b>\n\n<b>📌 Name:</b> {channel_title}\n<b>🆔 ID:</b> <code>{channel_id}</code>\n\n<b>🔗 Normal Link:</b>\n<code>{link1}</code>\n\n<b>🔗 Request Link:</b>\n<code>{link2}</code>"
+            msg_text = f"<b>📢 New Channel Added!</b>\n\n<b>📌 Name:</b> {chat.title}\n<b>🆔 ID:</b> <code>{chat.id}</code>\n\n<b>🔗 Normal Link:</b>\n<code>{link1}</code>\n\n<b>🔗 Request Link:</b>\n<code>{link2}</code>"
             
             sent_msg = await client.send_message(DATABASE_CHANNEL, msg_text)
             
             await channels_col.update_one(
-                {"channel_id": channel_id},
+                {"channel_id": chat.id},
                 {"$set": {"db_message_id": sent_msg.id}}
             )
             
-            LOGGER(__name__).info(f"Auto-added channel: {channel_title} ({channel_id})")
+            LOGGER(__name__).info(f"Auto-added channel: {chat.title} ({chat.id})")
             
         except Exception as e:
             LOGGER(__name__).error(f"Auto-add failed for {channel_id}: {e}")
