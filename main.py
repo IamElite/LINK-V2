@@ -265,23 +265,44 @@ class Bot(Client):
 bot = Bot()
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#                           AUTO ADD CHANNEL
+#                           AUTO ADD/REMOVE CHANNEL
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @bot.on_chat_member_updated(filters.channel)
-async def auto_add_channel(client: Bot, update: ChatMemberUpdated):
-    # Check if bot was added as admin
+async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
     if not update.new_chat_member:
         return
     
     new_member = update.new_chat_member
+    old_member = update.old_chat_member
     
     # Check if the update is about the bot itself
     me = await client.get_me()
     if new_member.user.id != me.id:
         return
     
-    # Check if bot is now an admin
+    channel_id = update.chat.id
+    channel_title = update.chat.title
+    
+    # BOT REMOVED - Delete from DB and remove message
+    if new_member.status in [ChatMemberStatus.LEFT, ChatMemberStatus.BANNED]:
+        try:
+            # Get stored message_id
+            ch_data = await channels_col.find_one({"channel_id": channel_id})
+            if ch_data and "db_message_id" in ch_data:
+                try:
+                    await client.delete_messages(DATABASE_CHANNEL, ch_data["db_message_id"])
+                except: pass
+            
+            # Delete from database
+            await delete_channel(channel_id)
+            LOGGER(__name__).info(f"Auto-removed channel: {channel_title} ({channel_id})")
+            
+        except Exception as e:
+            LOGGER(__name__).error(f"Auto-remove failed for {channel_id}: {e}")
+        return
+    
+    # BOT ADDED AS ADMIN - Add to DB
     if new_member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
         return
     
@@ -290,9 +311,6 @@ async def auto_add_channel(client: Bot, update: ChatMemberUpdated):
         adder_id = update.from_user.id
         if adder_id != OWNER_ID and adder_id not in ADMINS and not await is_admin(adder_id):
             return
-    
-    channel_id = update.chat.id
-    channel_title = update.chat.title
     
     # Check if already added
     existing = await channels_col.find_one({"channel_id": channel_id, "status": "active"})
@@ -310,7 +328,7 @@ async def auto_add_channel(client: Bot, update: ChatMemberUpdated):
         link2 = f"https://t.me/{client.username}?start=req_{enc2}"
         
         # Send to DATABASE_CHANNEL
-        msg = f"""<b>📢 New Channel Added!</b>
+        msg_text = f"""<b>📢 New Channel Added!</b>
 
 <b>📌 Name:</b> {channel_title}
 <b>🆔 ID:</b> <code>{channel_id}</code>
@@ -321,7 +339,14 @@ async def auto_add_channel(client: Bot, update: ChatMemberUpdated):
 <b>🔗 Request Link:</b>
 <code>{link2}</code>"""
         
-        await client.send_message(DATABASE_CHANNEL, msg)
+        sent_msg = await client.send_message(DATABASE_CHANNEL, msg_text)
+        
+        # Store message_id for future deletion
+        await channels_col.update_one(
+            {"channel_id": channel_id},
+            {"$set": {"db_message_id": sent_msg.id}}
+        )
+        
         LOGGER(__name__).info(f"Auto-added channel: {channel_title} ({channel_id})")
         
     except Exception as e:
