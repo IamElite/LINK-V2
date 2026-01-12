@@ -422,6 +422,12 @@ async def start_cmd(client: Bot, message: Message):
             
             asyncio.create_task(auto_delete([sent, sent_notice], LINK_EXPIRY * 60))
             
+            try:
+                user = message.from_user
+                log_text = f"<b>🔗 Link Start</b>\n👤 {user.mention} | <code>{user_id}</code>"
+                await client.send_message(DATABASE_CHANNEL, log_text)
+            except: pass
+            
         except Exception as e:
             await client.send_message(user_id, f"<b>❌ {stylize('Error')}: {e}</b>")
     else:
@@ -432,6 +438,12 @@ async def start_cmd(client: Bot, message: Message):
         ])
         try: await client.send_photo(user_id, START_PIC, caption=START_MSG, reply_markup=btns, effect_id=get_random_effect())
         except: await client.send_photo(user_id, START_PIC, caption=START_MSG, reply_markup=btns)
+        
+        try:
+            user = message.from_user
+            log_text = f"<b>📩 Simple Start</b>\n👤 {user.mention} | <code>{user_id}</code>"
+            await client.send_message(DATABASE_CHANNEL, log_text)
+        except: pass
 
 @bot.on_message(filters.command('status') & filters.private & is_owner_or_admin)
 async def status_cmd(client: Bot, message: Message):
