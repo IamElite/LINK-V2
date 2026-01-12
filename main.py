@@ -369,6 +369,7 @@ async def start_cmd(client: Bot, message: Message):
     try: await message.react(random.choice(D))
     except: pass
     
+    start_type = None
     text = message.text
     if len(text) > 7:
         try:
@@ -421,12 +422,7 @@ async def start_cmd(client: Bot, message: Message):
             )
             
             asyncio.create_task(auto_delete([sent, sent_notice], LINK_EXPIRY * 60))
-            
-            try:
-                user = message.from_user
-                log_text = f"<b>🔗 Link Start</b>\n👤 {user.mention} | <code>{user_id}</code>"
-                await client.send_message(DATABASE_CHANNEL, log_text)
-            except: pass
+            start_type = stylize("🔗 Link Start")
             
         except Exception as e:
             await client.send_message(user_id, f"<b>❌ {stylize('Error')}: {e}</b>")
@@ -438,11 +434,12 @@ async def start_cmd(client: Bot, message: Message):
         ])
         try: await client.send_photo(user_id, START_PIC, caption=START_MSG, reply_markup=btns, effect_id=get_random_effect())
         except: await client.send_photo(user_id, START_PIC, caption=START_MSG, reply_markup=btns)
-        
+        start_type = stylize("📩 Simple Start")
+    
+    if start_type:
         try:
             user = message.from_user
-            log_text = f"<b>📩 Simple Start</b>\n👤 {user.mention} | <code>{user_id}</code>"
-            await client.send_message(DATABASE_CHANNEL, log_text)
+            await client.send_message(DATABASE_CHANNEL, f"<b>{start_type}</b>\n👤 {user.mention} | <code>{user_id}</code>")
         except: pass
 
 @bot.on_message(filters.command('status') & filters.private & is_owner_or_admin)
