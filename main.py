@@ -214,7 +214,6 @@ async def auto_delete(msgs, delay: int):
     for msg in msgs:
         try: await msg.delete()
         except: pass
-    LOGGER(__name__).info("Link and messages expired.")
 
 channel_locks = defaultdict(asyncio.Lock)
 chat_cache = {}
@@ -426,6 +425,7 @@ async def start_cmd(client: Bot, message: Message):
         except Exception as e:
             await client.send_message(user_id, f"<b>❌ {stylize('Error')}: {e}</b>")
     else:
+        await users_col.update_one({"user_id": user_id}, {"$unset": {"pending_join": ""}})
         btns = InlineKeyboardMarkup([
             [InlineKeyboardButton(stylize("• About"), callback_data="about"), InlineKeyboardButton(stylize("• Channels"), callback_data="channels")],
             [InlineKeyboardButton(stylize("• Close •"), callback_data="close")]
