@@ -214,6 +214,7 @@ async def auto_delete(msgs, delay: int):
     for msg in msgs:
         try: await msg.delete()
         except: pass
+    LOGGER(__name__).info("Link and messages expired.")
 
 channel_locks = defaultdict(asyncio.Lock)
 chat_cache = {}
@@ -269,7 +270,6 @@ bot = Bot()
 
 @bot.on_chat_member_updated(filters.group | filters.channel)
 async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
-    LOGGER(__name__).info("ChatMemberUpdated event received")
     try:
         new_member = update.new_chat_member
         old_member = update.old_chat_member
@@ -405,15 +405,15 @@ async def start_cmd(client: Bot, message: Message):
                 channel_name = stylize("Click below to join!")
             
             try: 
-                sent = await message.reply(f"<b>{channel_name}</b>", reply_markup=btn, effect_id=get_random_effect(), protect_content=True, quote=False)
+                sent = await client.send_message(user_id, f"<b>{channel_name}</b>", reply_markup=btn, effect_id=get_random_effect(), protect_content=True)
             except: 
-                sent = await message.reply(f"<b>{channel_name}</b>", reply_markup=btn, protect_content=True, quote=False)
+                sent = await client.send_message(user_id, f"<b>{channel_name}</b>", reply_markup=btn, protect_content=True)
             
             notice_text = f"<b><i>{stylize(f'This link will be dead in {LINK_EXPIRY} min and this message will be deleted.')}</i></b>"
             try:
-                sent_notice = await message.reply(notice_text, protect_content=True, quote=False)
+                sent_notice = await client.send_message(user_id, notice_text, protect_content=True)
             except:
-                sent_notice = await message.reply(notice_text, quote=False)
+                sent_notice = await client.send_message(user_id, notice_text)
             
             await users_col.update_one(
                 {"user_id": user_id},
@@ -424,14 +424,14 @@ async def start_cmd(client: Bot, message: Message):
             asyncio.create_task(auto_delete([sent, sent_notice], LINK_EXPIRY * 60))
             
         except Exception as e:
-            await message.reply(f"<b>❌ {stylize('Error')}: {e}</b>", quote=False)
+            await client.send_message(user_id, f"<b>❌ {stylize('Error')}: {e}</b>")
     else:
         btns = InlineKeyboardMarkup([
             [InlineKeyboardButton(stylize("• About"), callback_data="about"), InlineKeyboardButton(stylize("• Channels"), callback_data="channels")],
             [InlineKeyboardButton(stylize("• Close •"), callback_data="close")]
         ])
-        try: await message.reply_photo(START_PIC, caption=START_MSG, reply_markup=btns, effect_id=get_random_effect(), quote=False)
-        except: await message.reply_photo(START_PIC, caption=START_MSG, reply_markup=btns, quote=False)
+        try: await client.send_photo(user_id, START_PIC, caption=START_MSG, reply_markup=btns, effect_id=get_random_effect())
+        except: await client.send_photo(user_id, START_PIC, caption=START_MSG, reply_markup=btns)
 
 @bot.on_message(filters.command('status') & filters.private & is_owner_or_admin)
 async def status_cmd(client: Bot, message: Message):
