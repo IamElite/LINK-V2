@@ -32,15 +32,20 @@ APPROVAL_WAIT_TIME = 5
 LINK_EXPIRY = 1
 
 START_PIC = "https://files.catbox.moe/yq2msx.jpg"
-START_MSG = "<b>𝗐𝖾𝗅𝖼𝗈𝗆𝖾 𝗍𝗈 𝗍𝗁𝖾 𝖺𝖽𝗏𝖺𝗇𝖼𝖾𝖽 𝗅𝗂𝗇𝗄𝗌 𝗌𝗁𝖺𝗋𝗂𝗇𝗀 𝖻𝗈𝗍.</b>"
-ABOUT_TXT = "<b>›› 𝖬𝖺𝗂𝗇𝗍𝖺𝗂𝗇𝖾𝖽 𝖻𝗒: @DshDm_bot</b>"
-CHANNELS_TXT = "<b>›› 𝖮𝗎𝗋 𝖢𝗁𝖺𝗇𝗇𝖾𝗅𝗌</b>"
+START_MSG = "welcome to the advanced links sharing bot."
+ABOUT_TXT = 'Maintained by: <a href="https://t.me/DshDm_bot">@DshDm_bot</a>'
+CHANNELS_TXT = "Our Channels"
 
 D = ["😘", "👾", "🤝", "👀", "❤️‍🔥", "💘", "😍", "😇", "🕊️", "🐳", "🎉", "🏆", "🗿", "⚡", "💯", "👌", "🍾"]
 
 def stylize(text):
     normal = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    styled = "𝖠𝖡𝖢𝖣𝖤𝖥𝖦𝖧𝖨𝖩𝖪𝖫𝖬𝖭𝖮𝖯𝖰𝖱𝖲𝖳𝖴𝖵𝖶𝖷𝖸𝖹𝖺𝖻𝖼𝖽𝖾𝖿𝗀𝗁𝗂𝗃𝗄𝗅𝗆𝗇𝗈𝗉𝗊𝗋𝗌𝗍𝗎𝗏𝗐𝗑𝗒𝗓𝟢𝟣𝟤𝟥𝟦𝟧𝟨𝟩𝟪𝟫"
+    fonts = [
+        "𝖠𝖡𝖢𝖣𝖤𝖥𝖦𝖧𝖨𝖩𝖪𝖫𝖬𝖭𝖮𝖯𝖰𝖱𝖲𝖳𝖴𝖵𝖶𝖷𝖸𝖹𝖺𝖻𝖼𝖽𝖾𝖿𝗀𝗁𝗂𝗃𝗄𝗅𝗆𝗇𝗈𝗉𝗊𝗋𝗌𝗍𝗎𝗏𝗐𝗑𝗒𝗓𝟢𝟣𝟤𝟥𝟦𝟧𝟨𝟩𝟪𝟫",
+        "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡxʏᴢᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡxʏᴢ0123456789",
+        "𝐀𝐁𝐂𝐃𝐄𝐅𝐆𝐇𝐈𝐉𝐊𝐋𝐌𝐍𝐎𝐏𝐐𝐑𝐒𝐓𝐔𝐕𝐖𝐗𝐘𝐙ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡ𝐱ʏᴢ𝟎𝟏𝟐𝟑𝟒𝟓𝟔𝟕𝟖𝟗"
+    ]
+    styled = random.choice(fonts)
     return text.translate(str.maketrans(normal, styled))
 
 def get_random_effect():
@@ -432,8 +437,8 @@ async def start_cmd(client: Bot, message: Message):
             [InlineKeyboardButton(stylize("• About"), callback_data="about"), InlineKeyboardButton(stylize("• Channels"), callback_data="channels")],
             [InlineKeyboardButton(stylize("• Close •"), callback_data="close")]
         ])
-        try: await client.send_photo(user_id, START_PIC, caption=START_MSG, reply_markup=btns, effect_id=get_random_effect())
-        except: await client.send_photo(user_id, START_PIC, caption=START_MSG, reply_markup=btns)
+        try: await client.send_photo(user_id, START_PIC, caption=f"<b>{stylize(START_MSG)}</b>", reply_markup=btns, effect_id=get_random_effect())
+        except: await client.send_photo(user_id, START_PIC, caption=f"<b>{stylize(START_MSG)}</b>", reply_markup=btns)
         start_type = stylize("📩 Simple Start")
     
     if start_type:
@@ -502,7 +507,6 @@ async def cancel_cmd(client: Bot, message: Message):
         is_canceled = True
     await message.reply(f"<b>🛑 {stylize('Broadcast will be cancelled.')}</b>")
 
-PAGE_SIZE = 6
 
 @bot.on_message(filters.command(['addchat', 'addch']) & is_owner_or_admin)
 async def addchat_cmd(client: Bot, message: Message):
@@ -670,13 +674,13 @@ async def callback_handler(client: Bot, query: CallbackQuery):
     
     elif data == "about":
         await query.edit_message_media(
-            InputMediaPhoto(START_PIC, ABOUT_TXT),
+            InputMediaPhoto(START_PIC, f"<b>›› {stylize(ABOUT_TXT)}</b>"),
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(stylize("• Back"), callback_data="start")]])
         )
     
     elif data == "channels":
         await query.edit_message_media(
-            InputMediaPhoto(START_PIC, CHANNELS_TXT),
+            InputMediaPhoto(START_PIC, f"<b>›› {stylize(CHANNELS_TXT)}</b>"),
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(stylize("• Back"), callback_data="start")]])
         )
     
@@ -686,9 +690,9 @@ async def callback_handler(client: Bot, query: CallbackQuery):
             [InlineKeyboardButton(stylize("• Close •"), callback_data="close")]
         ])
         try:
-            await query.edit_message_media(InputMediaPhoto(START_PIC, START_MSG), reply_markup=btns)
+            await query.edit_message_media(InputMediaPhoto(START_PIC, f"<b>{stylize(START_MSG)}</b>"), reply_markup=btns)
         except:
-            await query.edit_message_text(START_MSG, reply_markup=btns)
+            await query.edit_message_text(f"<b>{stylize(START_MSG)}</b>", reply_markup=btns)
 
 async def start_bot():
     try:
