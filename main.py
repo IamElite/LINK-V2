@@ -31,7 +31,7 @@ APPROVED_WELCOME = "on"
 APPROVAL_WAIT_TIME = 5
 LINK_EXPIRY = 1
 
-START_PIC = "https://telegra.ph/file/f3d3aff9ec422158feb05-d2180e3665e0ac4d32.jpg"
+START_PIC = "https://files.catbox.moe/yq2msx.jpg"
 START_MSG = "<b>𝗐𝖾𝗅𝖼𝗈𝗆𝖾 𝗍𝗈 𝗍𝗁𝖾 𝖺𝖽𝗏𝖺𝗇𝖼𝖾𝖽 𝗅𝗂𝗇𝗄𝗌 𝗌𝗁𝖺𝗋𝗂𝗇𝗀 𝖻𝗈𝗍.</b>"
 ABOUT_TXT = "<b>›› 𝖬𝖺𝗂𝗇𝗍𝖺𝗂𝗇𝖾𝖽 𝖻𝗒: @DshDm_bot</b>"
 CHANNELS_TXT = "<b>›› 𝖮𝗎𝗋 𝖢𝗁𝖺𝗇𝗇𝖾𝗅𝗌</b>"
@@ -646,7 +646,9 @@ async def auto_approve(client, req: ChatJoinRequest):
         
         if APPROVED_WELCOME == "on":
             try:
-                await client.send_message(user.id, f"<b>✅ {stylize('You have been added!')}</b>")
+                msg_text = f"{stylize('Hello')} ᚐ⎯‌ {user.mention}\n\n{stylize('Your request to join')} <b>{stylize(chat.title)}</b> {stylize('has been approved!')}"
+                btn = InlineKeyboardMarkup([[InlineKeyboardButton(stylize("Visit For More"), url="https://t.me/SyntaxRealm")]])
+                await client.send_message(user.id, msg_text, reply_markup=btn)
             except: pass
     except: pass
 
@@ -659,13 +661,13 @@ async def callback_handler(client: Bot, query: CallbackQuery):
     
     elif data == "about":
         await query.edit_message_media(
-            InputMediaPhoto("https://envs.sh/Wdj.jpg", ABOUT_TXT),
+            InputMediaPhoto(START_PIC, ABOUT_TXT),
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(stylize("• Back"), callback_data="start")]])
         )
     
     elif data == "channels":
         await query.edit_message_media(
-            InputMediaPhoto("https://envs.sh/Wdj.jpg", CHANNELS_TXT),
+            InputMediaPhoto(START_PIC, CHANNELS_TXT),
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(stylize("• Back"), callback_data="start")]])
         )
     
