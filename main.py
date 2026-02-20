@@ -123,7 +123,7 @@ async def delete_channel(channel_id: int) -> bool:
     return result.deleted_count > 0
 
 async def save_encoded_link(channel_id: int) -> Optional[str]:
-    encoded = base64.urlsafe_b64encode(str(channel_id).encode()).decode()
+    encoded = await encode(str(channel_id))
     await channels_col.update_one(
         {"channel_id": channel_id},
         {"$set": {"encoded_link": encoded, "status": "active", "updated_at": datetime.utcnow()}},
@@ -141,11 +141,27 @@ async def save_encoded_link2(channel_id: int, encoded: str) -> Optional[str]:
 
 async def get_channel_by_encoded_link(encoded: str) -> Optional[int]:
     ch = await channels_col.find_one({"encoded_link": encoded, "status": "active"})
-    return ch["channel_id"] if ch else None
+    if ch: return ch["channel_id"]
+    try:
+        decoded = await decode(encoded)
+        if decoded.isdigit() or (decoded.startswith("-") and decoded[1:].isdigit()):
+            cid = int(decoded)
+            ch = await channels_col.find_one({"channel_id": cid, "status": "active"})
+            if ch: return cid
+    except: pass
+    return None
 
 async def get_channel_by_encoded_link2(encoded: str) -> Optional[int]:
     ch = await channels_col.find_one({"req_encoded_link": encoded, "status": "active"})
-    return ch["channel_id"] if ch else None
+    if ch: return ch["channel_id"]
+    try:
+        decoded = await decode(encoded)
+        if decoded.isdigit() or (decoded.startswith("-") and decoded[1:].isdigit()):
+            cid = int(decoded)
+            ch = await channels_col.find_one({"channel_id": cid, "status": "active"})
+            if ch: return cid
+    except: pass
+    return None
 
 async def save_invite_link(channel_id: int, link: str, is_request: bool) -> bool:
     await channels_col.update_one(
@@ -340,7 +356,7 @@ async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
             LOGGER(__name__).info(f"Auto-added channel: {chat.title} ({chat.id})")
             
         except Exception as e:
-            LOGGER(__name__).error(f"Auto-add failed for {channel_id}: {e}")
+            LOGGER(__name__).error(f"Auto-add failed for {chat.id}: {e}")
     
     except Exception as e:
         LOGGER(__name__).error(f"ChatMemberUpdated handler error: {e}")
@@ -382,7 +398,7 @@ async def start_cmd(client: Bot, message: Message):
     text = message.text
     if len(text) > 7:
         try:
-            arg = text.split(" ", 1)[1]
+            arg = text.split(" ", 1)[1].strip()
             is_request = arg.startswith("req_")
             if is_request:
                 arg = arg[4:]
@@ -418,7 +434,7 @@ async def start_cmd(client: Bot, message: Message):
             except: 
                 sent = await client.send_message(user_id, f"<b>{channel_name}</b>", reply_markup=btn, protect_content=True)
             
-            notice_text = f"<b><i>{stylize(f'This link will be dead in {LINK_EXPIRY} min and this message will be deleted.')}</i></b>"
+            notice_text = f"<b><i><u>{stylize(f'This link will be dead in {LINK_EXPIRY} min and this message will be deleted.')}</u></i></b>"
             try:
                 sent_notice = await client.send_message(user_id, notice_text, protect_content=True)
             except:
@@ -438,8 +454,8 @@ async def start_cmd(client: Bot, message: Message):
     else:
         await users_col.update_one({"user_id": user_id}, {"$unset": {"pending_join": ""}})
         btns = InlineKeyboardMarkup([
-            [InlineKeyboardButton(stylize("• About"), callback_data="about"), InlineKeyboardButton(stylize("• Channels"), callback_data="channels")],
-            [InlineKeyboardButton(stylize("• Close •"), callback_data="close")]
+            [InlineKeyboardButton(stylize("• About •"), callback_data="about"), InlineKeyboardButton(stylize("• Channels •"), callback_data="channels")],
+            [InlineKeyboardButton(stylize("✘"), callback_data="close")]
         ])
         try: await client.send_photo(user_id, START_PIC, caption=f"<b>{stylize(START_MSG)}</b>", reply_markup=btns, effect_id=get_random_effect())
         except: await client.send_photo(user_id, START_PIC, caption=f"<b>{stylize(START_MSG)}</b>", reply_markup=btns)
@@ -512,7 +528,7 @@ async def cancel_cmd(client: Bot, message: Message):
     await message.reply(f"<b>🛑 {stylize('Broadcast will be cancelled.')}</b>")
 
 
-@bot.on_message(filters.command(['addchat', 'addch']) & is_owner_or_admin)
+@bot.on_message(filters.command(['addchat', 'addch', "addchannle", "addchnnl"]) & is_owner_or_admin)
 async def addchat_cmd(client: Bot, message: Message):
     try:
         channel_id = int(message.command[1])
@@ -588,7 +604,7 @@ async def links_handler(client: Bot, update):
     if end < len(channels): btns.append(InlineKeyboardButton(stylize("Next »"), callback_data=f"links_page_{page+1}"))
     
     rows = [btns] if btns else []
-    rows.append([InlineKeyboardButton(stylize("• Close •"), callback_data="close")])
+    rows.append([InlineKeyboardButton(stylize("✘"), callback_data="close")])
     kb = InlineKeyboardMarkup(rows)
     try:
         if is_cb: await update.edit_message_text(text, reply_markup=kb)
@@ -679,19 +695,19 @@ async def callback_handler(client: Bot, query: CallbackQuery):
     elif data == "about":
         await query.edit_message_media(
             InputMediaPhoto(START_PIC, f"<b>›› {stylize(ABOUT_TXT)}</b>"),
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(stylize("• Back"), callback_data="start")]])
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(stylize("« Back •"), callback_data="start")]])
         )
     
     elif data == "channels":
         await query.edit_message_media(
             InputMediaPhoto(START_PIC, f"<b>›› {stylize(CHANNELS_TXT)}</b>"),
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(stylize("• Back"), callback_data="start")]])
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(stylize("« Back •"), callback_data="start")]])
         )
     
     elif data == "start":
         btns = InlineKeyboardMarkup([
-            [InlineKeyboardButton(stylize("• About"), callback_data="about"), InlineKeyboardButton(stylize("• Channels"), callback_data="channels")],
-            [InlineKeyboardButton(stylize("• Close •"), callback_data="close")]
+            [InlineKeyboardButton(stylize("• About •"), callback_data="about"), InlineKeyboardButton(stylize("• Channels •"), callback_data="channels")],
+            [InlineKeyboardButton(stylize("✘"), callback_data="close")]
         ])
         try:
             await query.edit_message_media(InputMediaPhoto(START_PIC, f"<b>{stylize(START_MSG)}</b>"), reply_markup=btns)
