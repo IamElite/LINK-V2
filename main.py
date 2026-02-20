@@ -29,7 +29,7 @@ DATABASE_CHANNEL = -1003104736593
 CHAT_ID = []
 APPROVED_WELCOME = "on"
 APPROVAL_WAIT_TIME = 5
-LINK_EXPIRY = 1
+LINK_EXPIRY = 2
 
 START_PIC = "https://files.catbox.moe/yq2msx.jpg"
 START_MSG = "welcome to the advanced links sharing bot."
@@ -123,7 +123,7 @@ async def delete_channel(channel_id: int) -> bool:
     return result.deleted_count > 0
 
 async def save_encoded_link(channel_id: int) -> Optional[str]:
-    encoded = await encode(str(channel_id))
+    encoded = base64.urlsafe_b64encode(str(channel_id).encode()).decode()
     await channels_col.update_one(
         {"channel_id": channel_id},
         {"$set": {"encoded_link": encoded, "status": "active", "updated_at": datetime.utcnow()}},
@@ -141,27 +141,11 @@ async def save_encoded_link2(channel_id: int, encoded: str) -> Optional[str]:
 
 async def get_channel_by_encoded_link(encoded: str) -> Optional[int]:
     ch = await channels_col.find_one({"encoded_link": encoded, "status": "active"})
-    if ch: return ch["channel_id"]
-    try:
-        decoded = await decode(encoded)
-        if decoded.isdigit() or (decoded.startswith("-") and decoded[1:].isdigit()):
-            cid = int(decoded)
-            ch = await channels_col.find_one({"channel_id": cid, "status": "active"})
-            if ch: return cid
-    except: pass
-    return None
+    return ch["channel_id"] if ch else None
 
 async def get_channel_by_encoded_link2(encoded: str) -> Optional[int]:
     ch = await channels_col.find_one({"req_encoded_link": encoded, "status": "active"})
-    if ch: return ch["channel_id"]
-    try:
-        decoded = await decode(encoded)
-        if decoded.isdigit() or (decoded.startswith("-") and decoded[1:].isdigit()):
-            cid = int(decoded)
-            ch = await channels_col.find_one({"channel_id": cid, "status": "active"})
-            if ch: return cid
-    except: pass
-    return None
+    return ch["channel_id"] if ch else None
 
 async def save_invite_link(channel_id: int, link: str, is_request: bool) -> bool:
     await channels_col.update_one(
@@ -356,7 +340,7 @@ async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
             LOGGER(__name__).info(f"Auto-added channel: {chat.title} ({chat.id})")
             
         except Exception as e:
-            LOGGER(__name__).error(f"Auto-add failed for {chat.id}: {e}")
+            LOGGER(__name__).error(f"Auto-add failed for {channel_id}: {e}")
     
     except Exception as e:
         LOGGER(__name__).error(f"ChatMemberUpdated handler error: {e}")
@@ -398,7 +382,7 @@ async def start_cmd(client: Bot, message: Message):
     text = message.text
     if len(text) > 7:
         try:
-            arg = text.split(" ", 1)[1].strip()
+            arg = text.split(" ", 1)[1]
             is_request = arg.startswith("req_")
             if is_request:
                 arg = arg[4:]
