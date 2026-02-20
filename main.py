@@ -399,7 +399,7 @@ async def start_cmd(client: Bot, message: Message):
                 return await message.reply(f"<b>✅ {stylize('Here is your link!')}</b>", reply_markup=btn)
             
             if is_request:
-                inv = await client.create_chat_invite_link(channel_id, expire_date=datetime.now() + timedelta(minutes=LINK_EXPIRY), creates_join_request=True, member_limit=1)
+                inv = await client.create_chat_invite_link(channel_id, expire_date=datetime.now() + timedelta(minutes=LINK_EXPIRY), creates_join_request=True)
             else:
                 inv = await client.create_chat_invite_link(channel_id, expire_date=datetime.now() + timedelta(minutes=LINK_EXPIRY), member_limit=1)
             
