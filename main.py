@@ -24,17 +24,29 @@ PORT = int(os.environ.get("PORT", "8080"))
 DB_URI = os.environ.get("DB_URI", "")
 DB_NAME = "link"
 TG_BOT_WORKERS = 40
-DATABASE_CHANNEL = -1003104736593
+DATABASE_CHANNEL = int(os.environ.get("DATABASE_CHANNEL", "-1003104736593"))
 
 CHAT_ID = []
 APPROVED_WELCOME = "on"
 APPROVAL_WAIT_TIME = 5
 LINK_EXPIRY = 1
 
-START_PIC = "https://files.catbox.moe/yq2msx.jpg"
+START_PIC = "https://files.catbox.moe/hijl9a.jpg"
 START_MSG = "welcome to the advanced links sharing bot."
 ABOUT_TXT = 'Maintained by: <a href="https://t.me/DshDm_bot">@DshDm_bot</a>'
 CHANNELS_TXT = "Our Channels"
+
+# Add or remove channels here simply by adding/removing dictionaries in the list
+OUR_CHANNELS = [
+    {"name": "main", "url": "https://t.me/SyntaxRealm"},
+    {"name": "sub-main", "url": "https://t.me/Syntax_Realm"},
+    {"name": "ongoing-anime", "url": "https://t.me/crunchyroll_In_Hindi_SR"},
+    {"name": "backup", "url": "https://t.me/TGUrlsHub"},
+    {"name": "backup-2", "url": "https://t.me/TGEliteHub"},
+]
+
+
+
 
 D = ["😘", "👾", "🤝", "👀", "❤️‍🔥", "💘", "😍", "😇", "🕊️", "🐳", "🎉", "🏆", "🗿", "⚡", "💯", "👌", "🍾"]
 
@@ -418,7 +430,7 @@ async def start_cmd(client: Bot, message: Message):
             except: 
                 sent = await client.send_message(user_id, f"<b>{channel_name}</b>", reply_markup=btn, protect_content=True)
             
-            notice_text = f"<b><i><u>{stylize(f'This link will be dead in {LINK_EXPIRY} min and this message will be deleted.')}</u></i></b>"
+            notice_text = f"<b><i><u>{stylize(f'This link is dead in {LINK_EXPIRY} min and also this message will be deleted.')}</u></i></b>"
             try:
                 sent_notice = await client.send_message(user_id, notice_text, protect_content=True)
             except:
@@ -663,7 +675,7 @@ async def auto_approve(client, req: ChatJoinRequest):
         
         if APPROVED_WELCOME == "on":
             try:
-                msg_text = f"{stylize('Hello')} ᚐ⎯‌ {user.mention}\n\n{stylize('Your request to join')} <b>{stylize(chat.title)}</b> {stylize('has been approved!')}"
+                msg_text = f"{stylize('» Hello')} {user.mention}.\n\n{stylize('Your request to join')} <b>{stylize(chat.title)}</b> {stylize('has been approved!')}"
                 btn = InlineKeyboardMarkup([[InlineKeyboardButton(stylize("Visit For More"), url="https://t.me/SyntaxRealm")]])
                 await client.send_message(user.id, msg_text, reply_markup=btn)
             except: pass
@@ -683,10 +695,20 @@ async def callback_handler(client: Bot, query: CallbackQuery):
         )
     
     elif data == "channels":
+        btns = []
+        for chnl in OUR_CHANNELS:
+            name, url = chnl.get("name"), chnl.get("url")
+            if name and url and url != "https://t.me/":
+                btns.append([InlineKeyboardButton(stylize("• " + name + " •"), url=url)])
+        
+        btns.append([InlineKeyboardButton(stylize("« Back •"), callback_data="start")])
+        
         await query.edit_message_media(
             InputMediaPhoto(START_PIC, f"<b>›› {stylize(CHANNELS_TXT)}</b>"),
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(stylize("« Back •"), callback_data="start")]])
+            reply_markup=InlineKeyboardMarkup(btns)
         )
+
+
     
     elif data == "start":
         btns = InlineKeyboardMarkup([
