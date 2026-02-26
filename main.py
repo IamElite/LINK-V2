@@ -32,8 +32,8 @@ APPROVAL_WAIT_TIME = 5
 LINK_EXPIRY = 1
 
 START_PIC = "https://files.catbox.moe/hijl9a.jpg"
-START_MSG = "welcome to the advanced links sharing bot."
-ABOUT_TXT = 'Maintained by: <a href="https://t.me/DshDm_bot">@DshDm_bot</a>'
+START_MSG = "<b>Manage, reshare & control your links — smarter than ever.\n\n<blockquote>‣ Created for: <a href="https://t.me/SyntaxReal">˹ SyntaxRealm ˼</a></blockquote>"
+OWNER = "https://t.me/DshDm_bot"
 CHANNELS_TXT = "Our Channels"
 
 # Add or remove channels here simply by adding/removing dictionaries in the list
@@ -450,7 +450,7 @@ async def start_cmd(client: Bot, message: Message):
     else:
         await users_col.update_one({"user_id": user_id}, {"$unset": {"pending_join": ""}})
         btns = InlineKeyboardMarkup([
-            [InlineKeyboardButton(stylize("• About •"), callback_data="about"), InlineKeyboardButton(stylize("• Channels •"), callback_data="channels")],
+            [InlineKeyboardButton(stylize("• Owner •"), url="https://t.me/DshDm_bot"), InlineKeyboardButton(stylize("• Channels •"), callback_data="channels")],
             [InlineKeyboardButton(stylize("✘"), callback_data="close")]
         ])
         try: await client.send_photo(user_id, START_PIC, caption=f"<b>{stylize(START_MSG)}</b>", reply_markup=btns, effect_id=get_random_effect())
@@ -688,12 +688,6 @@ async def callback_handler(client: Bot, query: CallbackQuery):
     if data == "close":
         await query.message.delete()
     
-    elif data == "about":
-        await query.edit_message_media(
-            InputMediaPhoto(START_PIC, f"<b>›› {stylize(ABOUT_TXT)}</b>"),
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(stylize("« Back •"), callback_data="start")]])
-        )
-    
     elif data == "channels":
         btns = []
         for chnl in OUR_CHANNELS:
@@ -712,7 +706,7 @@ async def callback_handler(client: Bot, query: CallbackQuery):
     
     elif data == "start":
         btns = InlineKeyboardMarkup([
-            [InlineKeyboardButton(stylize("• About •"), callback_data="about"), InlineKeyboardButton(stylize("• Channels •"), callback_data="channels")],
+            [InlineKeyboardButton(stylize("˹ Owner ˼"), OWNER), InlineKeyboardButton(stylize("˹ Channels ˼"), callback_data="channels")],
             [InlineKeyboardButton(stylize("✘"), callback_data="close")]
         ])
         try:
