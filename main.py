@@ -32,7 +32,7 @@ APPROVAL_WAIT_TIME = 5
 LINK_EXPIRY = 1
 
 START_PIC = "https://files.catbox.moe/hijl9a.jpg"
-START_MSG = "<b>Manage, reshare & control your links — smarter than ever.\n\n<blockquote>‣ Created for: <a href="https://t.me/SyntaxReal">˹ SyntaxRealm ˼</a></blockquote>"
+START_MSG = "<b>Manage, reshare & control your links — smarter than ever.\n\n<blockquote>‣ Created for: <a href='https://t.me/SyntaxRealm'>˹ SyntaxRealm ˼</a></blockquote></b>"
 OWNER = "https://t.me/DshDm_bot"
 CHANNELS_TXT = "Our Channels"
 
