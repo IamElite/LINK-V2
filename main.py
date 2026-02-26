@@ -450,7 +450,7 @@ async def start_cmd(client: Bot, message: Message):
     else:
         await users_col.update_one({"user_id": user_id}, {"$unset": {"pending_join": ""}})
         btns = InlineKeyboardMarkup([
-            [InlineKeyboardButton(stylize("• Owner •"), url="https://t.me/DshDm_bot"), InlineKeyboardButton(stylize("• Channels •"), callback_data="channels")],
+            [InlineKeyboardButton(stylize("˹ Owner ˼"), url=OWNER), InlineKeyboardButton(stylize("˹ Channels ˼"), callback_data="channels")],
             [InlineKeyboardButton(stylize("✘"), callback_data="close")]
         ])
         try: await client.send_photo(user_id, START_PIC, caption=f"<b>{stylize(START_MSG)}</b>", reply_markup=btns, effect_id=get_random_effect())
@@ -706,7 +706,7 @@ async def callback_handler(client: Bot, query: CallbackQuery):
     
     elif data == "start":
         btns = InlineKeyboardMarkup([
-            [InlineKeyboardButton(stylize("˹ Owner ˼"), OWNER), InlineKeyboardButton(stylize("˹ Channels ˼"), callback_data="channels")],
+            [InlineKeyboardButton(stylize("˹ Owner ˼"), url=OWNER), InlineKeyboardButton(stylize("˹ Channels ˼"), callback_data="channels")],
             [InlineKeyboardButton(stylize("✘"), callback_data="close")]
         ])
         try:
