@@ -29,7 +29,7 @@
         },
         "UPSTREAM_BRANCH": {
             "description": "Branch for updates",
-            "value": "main",
+            "value": "kartik",
             "required": false
         }
     },
