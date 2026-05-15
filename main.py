@@ -58,28 +58,7 @@ class Config:
 pyrogram.utils.MIN_CHANNEL_ID = -1009147483647
 id_pattern = re.compile(r'^.\d+$')
 
-BOT_TOKEN = Config.BOT_TOKEN
-API_ID = Config.API_ID
-API_HASH = Config.API_HASH
-OWNER_ID = Config.OWNER_ID
-PORT = Config.PORT
-DB_URI = Config.DB_URI
-DB_NAME = Config.DB_NAME
-TG_BOT_WORKERS = Config.TG_BOT_WORKERS
-DATABASE_CHANNEL = Config.DATABASE_CHANNEL
-CHAT_ID = Config.CHAT_ID
-APPROVED_WELCOME = Config.APPROVED_WELCOME
-APPROVAL_WAIT_TIME = Config.APPROVAL_WAIT_TIME
-LINK_EXPIRY = Config.LINK_EXPIRY
-START_PIC = Config.START_PIC
-PICS_URL = Config.PICS_URL
-START_MSG = Config.START_MSG
-OWNER = Config.OWNER
-CHANNELS_TXT = Config.CHANNELS_TXT
-OUR_CHANNELS = Config.OUR_CHANNELS
-D = Config.D
-FONTS = Config.FONTS
-SELECTED_FONT = random.choice(FONTS)
+SELECTED_FONT = random.choice(Config.FONTS)
 
 def get_random_mix_id():
     chars = string.ascii_letters + string.digits
@@ -100,7 +79,7 @@ try:
     ADMINS = [int(x) for x in Config.ADMINS.split() if x.isdigit()]
 except:
     ADMINS = [1679112664]
-ADMINS.append(OWNER_ID)
+ADMINS.append(Config.OWNER_ID)
 ADMINS = list(set(ADMINS))
 
 LOG_FILE = "bot.log"
@@ -113,18 +92,14 @@ logging.basicConfig(
 logging.getLogger("pyrogram").setLevel(logging.WARNING)
 LOGGER = lambda name: logging.getLogger(name)
 
-dbclient = motor.motor_asyncio.AsyncIOMotorClient(DB_URI)
-db = dbclient[DB_NAME]
+dbclient = motor.motor_asyncio.AsyncIOMotorClient(Config.DB_URI)
+db = dbclient[Config.DB_NAME]
 users_col = db['users']
 channels_col = db['channels']
 fsub_col = db['fsub_channels']
 admins_col = db['admins']
 
 settings = Settings(db['settings'])
-
-async def up_cfg(key, default=None):
-    v = await settings.get(key)
-    return v if v is not None else default
 
 async def add_user(user_id: int) -> bool:
     if await users_col.find_one({'_id': user_id}): return False
@@ -230,7 +205,7 @@ async def get_fsub_channels() -> List[int]:
 class IsOwnerOrAdmin(Filter):
     async def __call__(self, _, message):
         uid = message.from_user.id
-        return uid == OWNER_ID or uid in ADMINS or await is_admin(uid)
+        return uid == Config.OWNER_ID or uid in ADMINS or await is_admin(uid)
 
 is_owner_or_admin = IsOwnerOrAdmin()
 
@@ -290,10 +265,10 @@ class Bot(Client):
     def __init__(self):
         super().__init__(
             name="Bot",
-            api_hash=API_HASH,
-            api_id=API_ID,
-            bot_token=BOT_TOKEN,
-            workers=TG_BOT_WORKERS,
+            api_hash=Config.API_HASH,
+            api_id=Config.API_ID,
+            bot_token=Config.BOT_TOKEN,
+            workers=Config.TG_BOT_WORKERS,
         )
         self.uptime = None
 
@@ -305,13 +280,13 @@ class Bot(Client):
         self.set_parse_mode(ParseMode.HTML)
         
         try:
-            await self.send_message(OWNER_ID, "<b>🤖 Bot Started ✅</b>")
+            await self.send_message(Config.OWNER_ID, "<b>🤖 Bot Started ✅</b>")
         except: pass
         
         try:
             app = web.AppRunner(web.Application())
             await app.setup()
-            await web.TCPSite(app, "0.0.0.0", PORT).start()
+            await web.TCPSite(app, "0.0.0.0", Config.PORT).start()
         except: pass
 
         try:
@@ -372,7 +347,7 @@ async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
                 ch_data = await channels_col.find_one({"channel_id": chat.id})
                 if ch_data:
                     if "db_message_id" in ch_data:
-                        try: await client.delete_messages(DATABASE_CHANNEL, ch_data["db_message_id"])
+                        try: await client.delete_messages(Config.DATABASE_CHANNEL, ch_data["db_message_id"])
                         except Exception as e: LOGGER(__name__).error(f"Failed to delete DB msg: {e}")
                     
                     await delete_channel(chat.id)
@@ -386,7 +361,7 @@ async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
         
         if update.from_user:
             adder_id = update.from_user.id
-            if adder_id != OWNER_ID and adder_id not in ADMINS and not await is_admin(adder_id):
+            if adder_id != Config.OWNER_ID and adder_id not in ADMINS and not await is_admin(adder_id):
                 return
         
         existing = await channels_col.find_one({"channel_id": chat.id, "status": "active"})
@@ -403,7 +378,7 @@ async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
             
             msg_text = f"<b>📢 New Channel Added!</b>\n\n<b>📌 Name:</b> {chat.title}\n<b>🆔 ID:</b> <code>{chat.id}</code>\n\n<b>🔗 Normal Link:</b>\n<code>{link1}</code>\n\n<b>🔗 Request Link:</b>\n<code>{link2}</code>"
             
-            sent_msg = await client.send_message(DATABASE_CHANNEL, msg_text)
+            sent_msg = await client.send_message(Config.DATABASE_CHANNEL, msg_text)
             
             await channels_col.update_one(
                 {"channel_id": chat.id},
@@ -448,7 +423,7 @@ async def start_cmd(client: Bot, message: Message):
     user_id = message.from_user.id
     await add_user(user_id)
     
-    try: await message.react(random.choice(D))
+    try: await message.react(random.choice(Config.D))
     except: pass
     
     start_type = None
@@ -472,9 +447,9 @@ async def start_cmd(client: Bot, message: Message):
                 return await message.reply(f"<b>✅ {stylize('Here is your link!')}</b>", reply_markup=btn)
             
             if is_request:
-                inv = await client.create_chat_invite_link(channel_id, expire_date=datetime.now() + timedelta(minutes=LINK_EXPIRY), creates_join_request=True)
+                inv = await client.create_chat_invite_link(channel_id, expire_date=datetime.now() + timedelta(minutes=Config.LINK_EXPIRY), creates_join_request=True)
             else:
-                inv = await client.create_chat_invite_link(channel_id, expire_date=datetime.now() + timedelta(minutes=LINK_EXPIRY), member_limit=1)
+                inv = await client.create_chat_invite_link(channel_id, expire_date=datetime.now() + timedelta(minutes=Config.LINK_EXPIRY), member_limit=1)
             
             invite_link = inv.invite_link
             btn_text = stylize("✿ Request to Join ✿") if is_request else stylize("✿ Join Channel ✿")
@@ -491,7 +466,7 @@ async def start_cmd(client: Bot, message: Message):
             except: 
                 sent = await client.send_message(user_id, f"<b>{channel_name}</b>", reply_markup=btn, protect_content=True)
             
-            notice_text = f"<b><i><u>{stylize(f'This link is dead in {LINK_EXPIRY} min and also this message will be deleted.')}</u></i></b>"
+            notice_text = f"<b><i><u>{stylize(f'This link is dead in {Config.LINK_EXPIRY} min and also this message will be deleted.')}</u></i></b>"
             try:
                 sent_notice = await client.send_message(user_id, notice_text, protect_content=True)
             except:
@@ -503,7 +478,7 @@ async def start_cmd(client: Bot, message: Message):
                 upsert=True
             )
             
-            asyncio.create_task(auto_delete([sent, sent_notice], LINK_EXPIRY * 60))
+            asyncio.create_task(auto_delete([sent, sent_notice], Config.LINK_EXPIRY * 60))
             start_type = stylize("🔗 Link Start")
             
         except Exception as e:
@@ -511,18 +486,18 @@ async def start_cmd(client: Bot, message: Message):
     else:
         await users_col.update_one({"user_id": user_id}, {"$unset": {"pending_join": ""}})
         btns = InlineKeyboardMarkup([
-            [InlineKeyboardButton(stylize("˹ Owner ˼"), url=OWNER), InlineKeyboardButton(stylize("˹ Channels ˼"), callback_data="channels")],
+            [InlineKeyboardButton(stylize("˹ Owner ˼"), url=Config.OWNER), InlineKeyboardButton(stylize("˹ Channels ˼"), callback_data="channels")],
             [InlineKeyboardButton(stylize("✘"), callback_data="close")]
         ])
-        pic_url = f"{random.choice(PICS_URL)}?r={get_random_mix_id()}"
-        try: await client.send_photo(user_id, pic_url, caption=f"<b>{stylize(START_MSG)}</b>", reply_markup=btns, effect_id=get_random_effect())
-        except: await client.send_photo(user_id, START_PIC, caption=f"<b>{stylize(START_MSG)}</b>", reply_markup=btns)
+        pic_url = f"{random.choice(Config.PICS_URL)}?r={get_random_mix_id()}"
+        try: await client.send_photo(user_id, pic_url, caption=f"<b>{stylize(Config.START_MSG)}</b>", reply_markup=btns, effect_id=get_random_effect())
+        except: await client.send_photo(user_id, Config.START_PIC, caption=f"<b>{stylize(Config.START_MSG)}</b>", reply_markup=btns)
         start_type = stylize("📩 Simple Start")
     
     if start_type:
         try:
             user = message.from_user
-            await client.send_message(DATABASE_CHANNEL, f"<b>{start_type}</b>\n👤 {user.mention} | <code>{user_id}</code>")
+            await client.send_message(Config.DATABASE_CHANNEL, f"<b>{start_type}</b>\n👤 {user.mention} | <code>{user_id}</code>")
         except: pass
 
 @bot.on_message(filters.command('status') & filters.private & is_owner_or_admin)
@@ -540,7 +515,7 @@ async def status_cmd(client: Bot, message: Message):
         total_chats = 0
     await msg.edit(f"<b>👥 {stylize('Users')}: {len(users)}\n📡 {stylize('Channels')}: {db_channels}\n💬 {stylize('Total Chats')}: {total_chats}\n⏱ {stylize('Uptime')}: {uptime}\n📶 {stylize('Ping')}: {ping:.2f}ms</b>")
 
-@bot.on_message(filters.command('stats') & filters.user(OWNER_ID))
+@bot.on_message(filters.command('stats') & filters.user(Config.OWNER_ID))
 async def stats_cmd(client: Bot, message: Message):
     uptime = get_readable_time(int((datetime.now() - client.uptime).total_seconds()))
     await message.reply(f"<b>{stylize('BOT UPTIME')}:</b> {uptime}")
@@ -675,7 +650,7 @@ async def links_handler(client: Bot, update):
         else: await update.reply(text, reply_markup=kb)
     except: pass
 
-@bot.on_message(filters.command('addadmin') & filters.user(OWNER_ID))
+@bot.on_message(filters.command('addadmin') & filters.user(Config.OWNER_ID))
 async def addadmin_cmd(client, message: Message):
     try:
         uid = int(message.command[1])
@@ -684,7 +659,7 @@ async def addadmin_cmd(client, message: Message):
     except:
         await message.reply(f"<b>{stylize('Usage')}: /addadmin {{user_id}}</b>")
 
-@bot.on_message(filters.command('deladmin') & filters.user(OWNER_ID))
+@bot.on_message(filters.command('deladmin') & filters.user(Config.OWNER_ID))
 async def deladmin_cmd(client, message: Message):
     try:
         uid = int(message.command[1])
@@ -693,7 +668,7 @@ async def deladmin_cmd(client, message: Message):
     except:
         await message.reply(f"<b>{stylize('Usage')}: /deladmin {{user_id}}</b>")
 
-@bot.on_message(filters.command('admins') & filters.user(OWNER_ID))
+@bot.on_message(filters.command('admins') & filters.user(Config.OWNER_ID))
 async def admins_cmd(client, message: Message):
     admins = await list_admins()
     text = f"<b>👑 {stylize('Admins')}:</b>\n" + "\n".join([f"• <code>{a}</code>" for a in admins]) if admins else f"<b>{stylize('No admins.')}</b>"
@@ -717,7 +692,7 @@ async def approveon_cmd(client, message: Message):
     except:
         await message.reply(f"<b>{stylize('Usage')}: /approveon {{channel_id}}</b>")
 
-@bot.on_chat_join_request((filters.group | filters.channel) & filters.chat(CHAT_ID) if CHAT_ID else (filters.group | filters.channel))
+@bot.on_chat_join_request((filters.group | filters.channel) & filters.chat(Config.CHAT_ID) if Config.CHAT_ID else (filters.group | filters.channel))
 async def auto_approve(client, req: ChatJoinRequest):
     chat = req.chat
     user = req.from_user
@@ -725,7 +700,7 @@ async def auto_approve(client, req: ChatJoinRequest):
     if await is_approval_off(chat.id):
         return
     
-    await asyncio.sleep(APPROVAL_WAIT_TIME)
+    await asyncio.sleep(Config.APPROVAL_WAIT_TIME)
     
     try:
         await client.approve_chat_join_request(chat.id, user.id)
@@ -741,7 +716,7 @@ async def auto_approve(client, req: ChatJoinRequest):
                 except: pass
                 await users_col.update_one({"user_id": user.id}, {"$unset": {"pending_join": ""}})
         
-        if APPROVED_WELCOME == "on":
+        if Config.APPROVED_WELCOME == "on":
             try:
                 msg_text = f"{stylize('» Hello')} {user.mention}.\n\n{stylize('Your request to join')} <b>{stylize(chat.title)}</b> {stylize('has been approved!')}"
                 btn = InlineKeyboardMarkup([[InlineKeyboardButton(stylize("Visit For More"), url="https://t.me/SyntaxRealm")]])
@@ -758,7 +733,7 @@ async def callback_handler(client: Bot, query: CallbackQuery):
     
     elif data == "channels":
         btns = []
-        for chnl in OUR_CHANNELS:
+        for chnl in Config.OUR_CHANNELS:
             name, url = chnl.get("name"), chnl.get("url")
             if name and url and url != "https://t.me/":
                 btns.append([InlineKeyboardButton(stylize("• " + name + " •"), url=url)])
@@ -766,19 +741,19 @@ async def callback_handler(client: Bot, query: CallbackQuery):
         btns.append([InlineKeyboardButton(stylize("« Back •"), callback_data="start")])
         
         await query.edit_message_media(
-            InputMediaPhoto(START_PIC, f"<b>›› {stylize(CHANNELS_TXT)}</b>"),
+            InputMediaPhoto(Config.START_PIC, f"<b>›› {stylize(Config.CHANNELS_TXT)}</b>"),
             reply_markup=InlineKeyboardMarkup(btns)
         )
 
     elif data == "start":
         btns = InlineKeyboardMarkup([
-            [InlineKeyboardButton(stylize("˹ Owner ˼"), url=OWNER), InlineKeyboardButton(stylize("˹ Channels ˼"), callback_data="channels")],
+            [InlineKeyboardButton(stylize("˹ Owner ˼"), url=Config.OWNER), InlineKeyboardButton(stylize("˹ Channels ˼"), callback_data="channels")],
             [InlineKeyboardButton(stylize("✘"), callback_data="close")]
         ])
         try:
-            await query.edit_message_media(InputMediaPhoto(START_PIC, f"<b>{stylize(START_MSG)}</b>"), reply_markup=btns)
+            await query.edit_message_media(InputMediaPhoto(Config.START_PIC, f"<b>{stylize(Config.START_MSG)}</b>"), reply_markup=btns)
         except:
-            await query.edit_message_text(f"<b>{stylize(START_MSG)}</b>", reply_markup=btns)
+            await query.edit_message_text(f"<b>{stylize(Config.START_MSG)}</b>", reply_markup=btns)
 
     elif data.startswith("settings"):
         await settings_callback(client, query)
@@ -867,7 +842,7 @@ async def settings_abort(client, message):
     settings_awaiting.pop(uid, None)
     await message.reply("<b>🚫 Aborted.</b>")
 
-@bot.on_message(filters.command("settings") & filters.private & filters.user(OWNER_ID))
+@bot.on_message(filters.command("settings") & filters.private & filters.user(Config.OWNER_ID))
 async def settings_cmd(client, message):
     await settings.load()
     text = "<b>⚙️ Settings Panel</b>\n\nSelect a category to manage:"
@@ -878,33 +853,16 @@ async def settings_cmd(client, message):
     await message.reply(text, reply_markup=InlineKeyboardMarkup(btns))
 
 def _current_val(key):
-    m = {
-        "START_PIC": START_PIC, "START_MSG": START_MSG, "OWNER": OWNER,
-        "CHANNELS_TXT": CHANNELS_TXT, "APPROVED_WELCOME": str(APPROVED_WELCOME),
-        "APPROVAL_WAIT_TIME": str(APPROVAL_WAIT_TIME), "LINK_EXPIRY": str(LINK_EXPIRY),
-        "DATABASE_CHANNEL": str(DATABASE_CHANNEL),
-        "PICS_URL": " ".join(PICS_URL) if isinstance(PICS_URL, list) else str(PICS_URL),
-        "BOT_TOKEN": BOT_TOKEN, "API_ID": str(API_ID), "API_HASH": API_HASH,
-        "OWNER_ID": str(OWNER_ID), "DB_URI": "Set in env", "DB_NAME": DB_NAME,
-        "UPSTREAM_REPO": os.environ.get("UPSTREAM_REPO", "https://github.com/IamElite/LINK-V2"),
-        "UPSTREAM_BRANCH": os.environ.get("UPSTREAM_BRANCH", "kartik"),
-    }
-    return m.get(key, "-")
+    return str(getattr(Config, key, "-"))
 
 def _apply_setting(key, val):
-    global START_PIC, START_MSG, OWNER, CHANNELS_TXT, APPROVED_WELCOME, APPROVAL_WAIT_TIME, LINK_EXPIRY, DATABASE_CHANNEL, PICS_URL
     setattr(Config, key, val)
-    m = {"START_PIC": "START_PIC", "START_MSG": "START_MSG", "OWNER": "OWNER", "CHANNELS_TXT": "CHANNELS_TXT",
-         "APPROVED_WELCOME": "APPROVED_WELCOME", "APPROVAL_WAIT_TIME": "APPROVAL_WAIT_TIME",
-         "LINK_EXPIRY": "LINK_EXPIRY", "DATABASE_CHANNEL": "DATABASE_CHANNEL", "PICS_URL": "PICS_URL"}
-    if key in m:
-        g = m[key]
-        if g == "PICS_URL":
-            globals()[g] = str(val).split() if " " in str(val) else [str(val)]
-        elif g in ("APPROVAL_WAIT_TIME", "LINK_EXPIRY", "DATABASE_CHANNEL"):
-            globals()[g] = int(val)
-        else:
-            globals()[g] = val
+    if key == "PICS_URL":
+        setattr(Config, key, str(val).split() if " " in str(val) else [str(val)])
+    elif key in ("APPROVAL_WAIT_TIME", "LINK_EXPIRY", "DATABASE_CHANNEL", "API_ID", "OWNER_ID", "PORT"):
+        setattr(Config, key, int(val))
+    elif key in ("TG_BOT_WORKERS",):
+        setattr(Config, key, int(val))
 
 def _reload_default(key):
     defaults = {
