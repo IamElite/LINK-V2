@@ -13,6 +13,8 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, 
 from pyrogram.errors import FloodWait, UserNotParticipant, UserIsBlocked, InputUserDeactivated, ChatAdminRequired, RPCError
 from pyrogram.filters import Filter
 
+from settings import Settings, CATEGORIES
+
 pyrogram.utils.MIN_CHANNEL_ID = -1009147483647
 id_pattern = re.compile(r'^.\d+$')
 
@@ -97,6 +99,12 @@ users_col = db['users']
 channels_col = db['channels']
 fsub_col = db['fsub_channels']
 admins_col = db['admins']
+
+settings = Settings(db['settings'])
+
+async def up_cfg(key, default=None):
+    v = await settings.get(key)
+    return v if v is not None else default
 
 async def add_user(user_id: int) -> bool:
     if await users_col.find_one({'_id': user_id}): return False
@@ -302,10 +310,29 @@ class Bot(Client):
                 BotCommand("deladmin", "[Owner] Remove an admin"),
                 BotCommand("approveoff", "[Admin] Disable auto-approve"),
                 BotCommand("approveon", "[Admin] Enable auto-approve"),
+                BotCommand("settings", "[Owner] Bot settings panel"),
             ])
         except: pass
 
+        await self._load_settings()
         LOGGER(__name__).info(f"Bot @{self.username} started!")
+
+    async def _load_settings(self):
+        global START_PIC, START_MSG, OWNER, CHANNELS_TXT, APPROVED_WELCOME, APPROVAL_WAIT_TIME, LINK_EXPIRY, DATABASE_CHANNEL, PICS_URL, OUR_CHANNELS
+        await settings.load()
+        for k, default in [("START_PIC", START_PIC), ("START_MSG", START_MSG), ("OWNER", OWNER), ("CHANNELS_TXT", CHANNELS_TXT)]:
+            v = await settings.get(k)
+            if v: globals()[k] = v
+        v = await settings.get("APPROVED_WELCOME")
+        if v is not None: APPROVED_WELCOME = v
+        v = await settings.get("APPROVAL_WAIT_TIME")
+        if v is not None: APPROVAL_WAIT_TIME = int(v)
+        v = await settings.get("LINK_EXPIRY")
+        if v is not None: LINK_EXPIRY = int(v)
+        v = await settings.get("DATABASE_CHANNEL")
+        if v is not None: DATABASE_CHANNEL = int(v)
+        v = await settings.get("PICS_URL")
+        if v: PICS_URL = str(v).split() if " " in str(v) else [str(v)]
 
     async def stop(self, *args):
         await super().stop()
@@ -448,7 +475,7 @@ async def start_cmd(client: Bot, message: Message):
                 chat = await get_chat_cached(client, channel_id)
                 channel_name = stylize(chat.title)
             except:
-                channel_name = stylize("Click below to join!")
+                channel_name = stylize("✿ Click below to join! ✿")
             
             try: 
                 sent = await client.send_message(user_id, f"<b>{channel_name}</b>", reply_markup=btn, effect_id=get_random_effect(), protect_content=True)
@@ -734,8 +761,6 @@ async def callback_handler(client: Bot, query: CallbackQuery):
             reply_markup=InlineKeyboardMarkup(btns)
         )
 
-
-    
     elif data == "start":
         btns = InlineKeyboardMarkup([
             [InlineKeyboardButton(stylize("˹ Owner ˼"), url=OWNER), InlineKeyboardButton(stylize("˹ Channels ˼"), callback_data="channels")],
@@ -745,6 +770,104 @@ async def callback_handler(client: Bot, query: CallbackQuery):
             await query.edit_message_media(InputMediaPhoto(START_PIC, f"<b>{stylize(START_MSG)}</b>"), reply_markup=btns)
         except:
             await query.edit_message_text(f"<b>{stylize(START_MSG)}</b>", reply_markup=btns)
+
+    elif data.startswith("settings"):
+        await settings_callback(client, query)
+
+settings_awaiting = {}
+
+async def settings_callback(client, query):
+    data = query.data
+    if data == "settings":
+        text = "<b>⚙️ Settings Panel</b>\n\nSelect a category to manage:"
+        btns = []
+        for cat_key, cat in CATEGORIES.items():
+            btns.append([InlineKeyboardButton(cat["name"], callback_data=f"settings_cat_{cat_key}")])
+        btns.append([InlineKeyboardButton("✘", callback_data="close")])
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(btns))
+
+    elif data.startswith("settings_cat_"):
+        cat = data.replace("settings_cat_", "")
+        if cat not in CATEGORIES: return
+        cat_data = CATEGORIES[cat]
+        text = f"<b>{cat_data['name']}</b>\n\n"
+        btns = []
+        for key, meta in cat_data["keys"].items():
+            cur = await settings.get(key) or "-"
+            if meta.get("secret") and cur != "-":
+                cur = cur[:6] + "..."
+            label = meta["label"]
+            text += f"<b>{label}</b>: <code>{cur}</code>\n"
+            if meta["type"] == "toggle":
+                btns.append([InlineKeyboardButton(f"🔄 Toggle {label}", callback_data=f"settings_toggle_{key}")])
+            else:
+                btns.append([InlineKeyboardButton(f"✏️ Edit {label}", callback_data=f"settings_edit_{key}")])
+        btns.append([InlineKeyboardButton("« Back", callback_data="settings")])
+        btns.append([InlineKeyboardButton("✘", callback_data="close")])
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(btns))
+
+    elif data.startswith("settings_toggle_"):
+        key = data.replace("settings_toggle_", "")
+        cur = await settings.get(key, "off")
+        new = "off" if cur == "on" else "on"
+        await settings.set(key, new)
+        _apply_setting(key, new)
+        await query.answer(f"✅ {key} -> {new}", show_alert=True)
+        await settings_callback(client, query)
+
+    elif data.startswith("settings_edit_"):
+        key = data.replace("settings_edit_", "")
+        settings_awaiting[query.from_user.id] = {"key": key, "msg_id": query.message.id}
+        await query.message.reply(f"<b>✏️ Send new value for</b> <code>{key}</code>\n/skip to keep current /cancel to abort")
+        await query.answer()
+
+@bot.on_message(filters.private & filters.text)
+async def settings_input(client, message):
+    uid = message.from_user.id
+    if uid not in settings_awaiting: return
+    data = settings_awaiting[uid]
+    key = data["key"]
+    val = message.text.strip()
+    await settings.set(key, val)
+    _apply_setting(key, val)
+    del settings_awaiting[uid]
+    await message.reply(f"<b>✅</b> <code>{key}</code> updated!", reply_to_message_id=data.get("msg_id"))
+
+@bot.on_message(filters.command("skip") & filters.private)
+async def settings_skip(client, message):
+    uid = message.from_user.id
+    settings_awaiting.pop(uid, None)
+    await message.reply("<b>⏭️ Skipped.</b>")
+
+@bot.on_message(filters.command("cancel") & filters.private)
+async def settings_abort(client, message):
+    uid = message.from_user.id
+    settings_awaiting.pop(uid, None)
+    await message.reply("<b>🚫 Cancelled.</b>")
+
+@bot.on_message(filters.command("settings") & filters.private & filters.user(OWNER_ID))
+async def settings_cmd(client, message):
+    await settings.load()
+    text = "<b>⚙️ Settings Panel</b>\n\nSelect a category to manage:"
+    btns = []
+    for cat_key, cat in CATEGORIES.items():
+        btns.append([InlineKeyboardButton(cat["name"], callback_data=f"settings_cat_{cat_key}")])
+    btns.append([InlineKeyboardButton("✘", callback_data="close")])
+    await message.reply(text, reply_markup=InlineKeyboardMarkup(btns))
+
+def _apply_setting(key, val):
+    global START_PIC, START_MSG, OWNER, CHANNELS_TXT, APPROVED_WELCOME, APPROVAL_WAIT_TIME, LINK_EXPIRY, DATABASE_CHANNEL, PICS_URL
+    m = {"START_PIC": "START_PIC", "START_MSG": "START_MSG", "OWNER": "OWNER", "CHANNELS_TXT": "CHANNELS_TXT",
+         "APPROVED_WELCOME": "APPROVED_WELCOME", "APPROVAL_WAIT_TIME": "APPROVAL_WAIT_TIME",
+         "LINK_EXPIRY": "LINK_EXPIRY", "DATABASE_CHANNEL": "DATABASE_CHANNEL", "PICS_URL": "PICS_URL"}
+    if key in m:
+        g = m[key]
+        if g == "PICS_URL":
+            globals()[g] = str(val).split() if " " in str(val) else [str(val)]
+        elif g in ("APPROVAL_WAIT_TIME", "LINK_EXPIRY", "DATABASE_CHANNEL"):
+            globals()[g] = int(val)
+        else:
+            globals()[g] = val
 
 async def start_bot():
     try:
