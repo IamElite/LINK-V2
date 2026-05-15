@@ -793,15 +793,18 @@ async def settings_callback(client, query):
         text = f"<b>{cat_data['name']}</b>\n\n"
         btns = []
         for key, meta in cat_data["keys"].items():
-            cur = await settings.get(key) or "-"
+            cur = await settings.get(key)
+            if cur is None:
+                cur = _current_val(key)
             if meta.get("secret") and cur != "-":
                 cur = cur[:6] + "..."
             label = meta["label"]
             text += f"<b>{label}</b>: <code>{cur}</code>\n"
             if meta["type"] == "toggle":
-                btns.append([InlineKeyboardButton(f"🔄 Toggle {label}", callback_data=f"settings_toggle_{key}")])
+                btns.append([InlineKeyboardButton(f"🔄 {label}", callback_data=f"settings_toggle_{key}")])
             else:
-                btns.append([InlineKeyboardButton(f"✏️ Edit {label}", callback_data=f"settings_edit_{key}")])
+                btns.append([InlineKeyboardButton(f"✏️ {label}", callback_data=f"settings_edit_{key}")])
+            btns.append([InlineKeyboardButton(f"↩️ Reset", callback_data=f"settings_reset_{key}")])
         btns.append([InlineKeyboardButton("« Back", callback_data="settings")])
         btns.append([InlineKeyboardButton("✘", callback_data="close")])
         await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(btns))
@@ -813,6 +816,13 @@ async def settings_callback(client, query):
         await settings.set(key, new)
         _apply_setting(key, new)
         await query.answer(f"✅ {key} -> {new}", show_alert=True)
+        await settings_callback(client, query)
+
+    elif data.startswith("settings_reset_"):
+        key = data.replace("settings_reset_", "")
+        await settings.delete(key)
+        _reload_default(key)
+        await query.answer(f"↩️ {key} reset to default!", show_alert=True)
         await settings_callback(client, query)
 
     elif data.startswith("settings_edit_"):
@@ -831,7 +841,10 @@ async def settings_input(client, message):
     await settings.set(key, val)
     _apply_setting(key, val)
     del settings_awaiting[uid]
-    await message.reply(f"<b>✅</b> <code>{key}</code> updated!", reply_to_message_id=data.get("msg_id"))
+    try:
+        await message.reply(f"<b>✅</b> <code>{key}</code> updated!")
+    except:
+        await message.reply(f"<b>✅</b> <code>{key}</code> updated!")
 
 @bot.on_message(filters.command("skip") & filters.private)
 async def settings_skip(client, message):
@@ -839,11 +852,11 @@ async def settings_skip(client, message):
     settings_awaiting.pop(uid, None)
     await message.reply("<b>⏭️ Skipped.</b>")
 
-@bot.on_message(filters.command("cancel") & filters.private)
+@bot.on_message(filters.command("cancel") & filters.private & filters.create(lambda _, __, m: m.from_user.id in settings_awaiting), group=-1)
 async def settings_abort(client, message):
     uid = message.from_user.id
     settings_awaiting.pop(uid, None)
-    await message.reply("<b>🚫 Cancelled.</b>")
+    await message.reply("<b>🚫 Aborted.</b>")
 
 @bot.on_message(filters.command("settings") & filters.private & filters.user(OWNER_ID))
 async def settings_cmd(client, message):
@@ -854,6 +867,20 @@ async def settings_cmd(client, message):
         btns.append([InlineKeyboardButton(cat["name"], callback_data=f"settings_cat_{cat_key}")])
     btns.append([InlineKeyboardButton("✘", callback_data="close")])
     await message.reply(text, reply_markup=InlineKeyboardMarkup(btns))
+
+def _current_val(key):
+    m = {
+        "START_PIC": START_PIC, "START_MSG": START_MSG, "OWNER": OWNER,
+        "CHANNELS_TXT": CHANNELS_TXT, "APPROVED_WELCOME": str(APPROVED_WELCOME),
+        "APPROVAL_WAIT_TIME": str(APPROVAL_WAIT_TIME), "LINK_EXPIRY": str(LINK_EXPIRY),
+        "DATABASE_CHANNEL": str(DATABASE_CHANNEL),
+        "PICS_URL": " ".join(PICS_URL) if isinstance(PICS_URL, list) else str(PICS_URL),
+        "BOT_TOKEN": BOT_TOKEN, "API_ID": str(API_ID), "API_HASH": API_HASH,
+        "OWNER_ID": str(OWNER_ID), "DB_URI": "Set in env", "DB_NAME": DB_NAME,
+        "UPSTREAM_REPO": os.environ.get("UPSTREAM_REPO", "https://github.com/IamElite/LINK-V2"),
+        "UPSTREAM_BRANCH": os.environ.get("UPSTREAM_BRANCH", "kartik"),
+    }
+    return m.get(key, "-")
 
 def _apply_setting(key, val):
     global START_PIC, START_MSG, OWNER, CHANNELS_TXT, APPROVED_WELCOME, APPROVAL_WAIT_TIME, LINK_EXPIRY, DATABASE_CHANNEL, PICS_URL
@@ -868,6 +895,29 @@ def _apply_setting(key, val):
             globals()[g] = int(val)
         else:
             globals()[g] = val
+
+def _reload_default(key):
+    env_defaults = {
+        "START_PIC": "https://files.catbox.moe/hijl9a.jpg",
+        "START_MSG": "<b>Manage, reshare & control your links — smarter than ever.\n\n<blockquote>‣ Created for: <a href='https://t.me/SyntaxRealm'>˹ SyntaxRealm ˼</a></blockquote></b>",
+        "OWNER": "https://t.me/DshDm_bot",
+        "CHANNELS_TXT": "Our Channels",
+        "APPROVED_WELCOME": "on",
+        "APPROVAL_WAIT_TIME": "5",
+        "LINK_EXPIRY": "1",
+        "DATABASE_CHANNEL": os.environ.get("DATABASE_CHANNEL", "-1003104736593"),
+        "PICS_URL": os.environ.get("PICS", "https://api.aniwallpaper.workers.dev/random?type=girl"),
+        "BOT_TOKEN": os.environ.get("BOT_TOKEN", ""),
+        "API_ID": "14050586",
+        "API_HASH": "42a60d9c657b106370c79bb0a8ac560c",
+        "OWNER_ID": os.environ.get("OWNER_ID", "7074383232"),
+        "DB_URI": os.environ.get("DB_URI", ""),
+        "DB_NAME": "link",
+        "UPSTREAM_REPO": os.environ.get("UPSTREAM_REPO", "https://github.com/IamElite/LINK-V2"),
+        "UPSTREAM_BRANCH": os.environ.get("UPSTREAM_BRANCH", "kartik"),
+    }
+    if key in env_defaults:
+        _apply_setting(key, env_defaults[key])
 
 async def start_bot():
     started = False
