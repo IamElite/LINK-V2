@@ -55,6 +55,9 @@ class Config:
 
     ADMINS = os.environ.get("ADMINS", "1679112664 7163796885 6604184902 7737229061")
 
+    UPSTREAM_REPO = os.environ.get("UPSTREAM_REPO", "https://github.com/IamElite/LINK-V2")
+    UPSTREAM_BRANCH = os.environ.get("UPSTREAM_BRANCH", "kartik")
+
 pyrogram.utils.MIN_CHANNEL_ID = -1009147483647
 id_pattern = re.compile(r'^.\d+$')
 
@@ -874,15 +877,15 @@ def _reload_default(key):
         "APPROVAL_WAIT_TIME": str(Config.APPROVAL_WAIT_TIME),
         "LINK_EXPIRY": str(Config.LINK_EXPIRY),
         "DATABASE_CHANNEL": str(Config.DATABASE_CHANNEL),
-        "PICS_URL": os.environ.get("PICS", "https://api.aniwallpaper.workers.dev/random?type=girl"),
+        "PICS_URL": " ".join(Config.PICS_URL) if isinstance(Config.PICS_URL, list) else str(Config.PICS_URL),
         "BOT_TOKEN": Config.BOT_TOKEN,
         "API_ID": str(Config.API_ID),
         "API_HASH": Config.API_HASH,
         "OWNER_ID": str(Config.OWNER_ID),
         "DB_URI": Config.DB_URI,
         "DB_NAME": Config.DB_NAME,
-        "UPSTREAM_REPO": os.environ.get("UPSTREAM_REPO", "https://github.com/IamElite/LINK-V2"),
-        "UPSTREAM_BRANCH": os.environ.get("UPSTREAM_BRANCH", "kartik"),
+        "UPSTREAM_REPO": Config.UPSTREAM_REPO,
+        "UPSTREAM_BRANCH": Config.UPSTREAM_BRANCH,
     }
     if key in defaults:
         _apply_setting(key, defaults[key])
