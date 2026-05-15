@@ -6,7 +6,7 @@ import tempfile
 import subprocess
 from urllib import request
 
-UPSTREAM_REPO = os.environ.get("UPSTREAM_REPO", "https://github.com/IamElite/ECB")
+UPSTREAM_REPO = os.environ.get("UPSTREAM_REPO", "https://github.com/IamElite/LINK-V2")
 UPSTREAM_BRANCH = os.environ.get("UPSTREAM_BRANCH", "main")
 
 def update_from_repo():
