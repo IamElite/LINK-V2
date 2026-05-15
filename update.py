@@ -1,13 +1,8 @@
-import os
-import sys
-import zipfile
-import shutil
-import tempfile
-import subprocess
+import os, sys, zipfile, shutil, tempfile, subprocess
 from urllib import request
 
 UPSTREAM_REPO = os.environ.get("UPSTREAM_REPO", "https://github.com/IamElite/LINK-V2")
-UPSTREAM_BRANCH = os.environ.get("UPSTREAM_BRANCH", "main")
+UPSTREAM_BRANCH = os.environ.get("UPSTREAM_BRANCH", "kartik")
 
 def update_from_repo():
     print("[UPDATE] Checking for updates...")
