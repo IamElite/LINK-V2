@@ -358,7 +358,7 @@ async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
             LOGGER(__name__).info(f"Auto-added channel: {chat.title} ({chat.id})")
             
         except Exception as e:
-            LOGGER(__name__).error(f"Auto-add failed for {channel_id}: {e}")
+            LOGGER(__name__).error(f"Auto-add failed for {chat.id}: {e}")
     
     except Exception as e:
         LOGGER(__name__).error(f"ChatMemberUpdated handler error: {e}")
