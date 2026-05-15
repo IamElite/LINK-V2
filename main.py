@@ -8,7 +8,7 @@ import motor.motor_asyncio
 import pyrogram.utils
 from aiohttp import web
 from pyrogram import Client, filters, idle
-from pyrogram.enums import ParseMode, ChatMemberStatus
+from pyrogram.enums import ParseMode, ChatMemberStatus, ChatType
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto, ChatJoinRequest, ChatMemberUpdated, BotCommand
 from pyrogram.errors import FloodWait, UserNotParticipant, UserIsBlocked, InputUserDeactivated, ChatAdminRequired, RPCError
 from pyrogram.filters import Filter
@@ -496,7 +496,13 @@ async def status_cmd(client: Bot, message: Message):
     ping = (time.time() - t1) * 1000
     users = await full_userbase()
     uptime = get_readable_time(int((datetime.now() - client.uptime).total_seconds()))
-    await msg.edit(f"<b>👥 {stylize('Users')}: {len(users)}\n⏱ {stylize('Uptime')}: {uptime}\n📶 {stylize('Ping')}: {ping:.2f}ms</b>")
+    db_channels = await channels_col.count_documents({"status": "active"})
+    try:
+        dialogs = [d async for d in client.get_dialogs()]
+        total_chats = len([d for d in dialogs if d.chat.type in (ChatType.CHANNEL, ChatType.SUPERGROUP, ChatType.GROUP)])
+    except:
+        total_chats = 0
+    await msg.edit(f"<b>👥 {stylize('Users')}: {len(users)}\n📡 {stylize('Channels')}: {db_channels}\n💬 {stylize('Total Chats')}: {total_chats}\n⏱ {stylize('Uptime')}: {uptime}\n📶 {stylize('Ping')}: {ping:.2f}ms</b>")
 
 @bot.on_message(filters.command('stats') & filters.user(OWNER_ID))
 async def stats_cmd(client: Bot, message: Message):
