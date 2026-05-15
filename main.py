@@ -856,7 +856,14 @@ async def settings_cmd(client, message):
     await message.reply(text, reply_markup=InlineKeyboardMarkup(btns))
 
 def _current_val(key):
-    return str(getattr(Config, key, "-"))
+    v = getattr(Config, key, None)
+    if v is None or v == "" or v == []:
+        return "-"
+    if isinstance(v, list):
+        return " ".join(str(x) if not isinstance(x, dict) else x.get("url", str(x)) for x in v)
+    if isinstance(v, int):
+        return str(v)
+    return str(v)
 
 def _apply_setting(key, val):
     setattr(Config, key, val)
