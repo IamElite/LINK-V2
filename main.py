@@ -9,7 +9,7 @@ import pyrogram.utils
 from aiohttp import web
 from pyrogram import Client, filters, idle
 from pyrogram.enums import ParseMode, ChatMemberStatus
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto, ChatJoinRequest, ChatMemberUpdated
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto, ChatJoinRequest, ChatMemberUpdated, BotCommand
 from pyrogram.errors import FloodWait, UserNotParticipant, UserIsBlocked, InputUserDeactivated, ChatAdminRequired, RPCError
 from pyrogram.filters import Filter
 
@@ -285,7 +285,26 @@ class Bot(Client):
             await app.setup()
             await web.TCPSite(app, "0.0.0.0", PORT).start()
         except: pass
-        
+
+        try:
+            await self.set_bot_commands([
+                BotCommand("start", "Start the bot & get links"),
+                BotCommand("status", "Bot status & ping"),
+                BotCommand("stats", "Bot uptime stats"),
+                BotCommand("broadcast", "Broadcast message to all users"),
+                BotCommand("cancel", "Cancel ongoing broadcast"),
+                BotCommand("channels", "List all connected channels"),
+                BotCommand("links", "Show all channel links"),
+                BotCommand("addchat", "Add a channel manually"),
+                BotCommand("delchat", "Remove a channel"),
+                BotCommand("admins", "List all admins"),
+                BotCommand("addadmin", "Add a new admin"),
+                BotCommand("deladmin", "Remove an admin"),
+                BotCommand("approveoff", "Disable auto-approve"),
+                BotCommand("approveon", "Enable auto-approve"),
+            ])
+        except: pass
+
         LOGGER(__name__).info(f"Bot @{self.username} started!")
 
     async def stop(self, *args):
