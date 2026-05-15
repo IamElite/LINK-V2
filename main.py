@@ -821,7 +821,7 @@ async def settings_callback(client, query):
         await query.message.reply(f"<b>✏️ Send new value for</b> <code>{key}</code>\n/skip to keep current /cancel to abort")
         await query.answer()
 
-@bot.on_message(filters.private & filters.text)
+@bot.on_message(filters.private & filters.text & filters.create(lambda _, __, m: m.from_user.id in settings_awaiting))
 async def settings_input(client, message):
     uid = message.from_user.id
     if uid not in settings_awaiting: return
