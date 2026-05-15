@@ -15,55 +15,75 @@ from pyrogram.filters import Filter
 
 from settings import Settings, CATEGORIES
 
+class Config:
+    BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+    API_ID = 14050586
+    API_HASH = "42a60d9c657b106370c79bb0a8ac560c"
+    OWNER_ID = 7074383232
+    PORT = int(os.environ.get("PORT", "8080"))
+    DB_URI = os.environ.get("DB_URI", "")
+    DB_NAME = "link"
+    TG_BOT_WORKERS = 40
+    DATABASE_CHANNEL = int(os.environ.get("DATABASE_CHANNEL", "-1003104736593"))
+
+    CHAT_ID = []
+    APPROVED_WELCOME = "on"
+    APPROVAL_WAIT_TIME = 5
+    LINK_EXPIRY = 1
+
+    START_PIC = "https://files.catbox.moe/hijl9a.jpg"
+    PICS_URL = (os.environ.get('PICS', 'https://api.aniwallpaper.workers.dev/random?type=girl')).split()
+
+    START_MSG = "<b>Manage, reshare & control your links — smarter than ever.\n\n<blockquote>‣ Created for: <a href='https://t.me/SyntaxRealm'>˹ SyntaxRealm ˼</a></blockquote></b>"
+    OWNER = "https://t.me/DshDm_bot"
+    CHANNELS_TXT = "Our Channels"
+
+    OUR_CHANNELS = [
+        {"name": "main", "url": "https://t.me/SyntaxRealm"},
+        {"name": "sub-main", "url": "https://t.me/Syntax_Realm"},
+        {"name": "ongoing-anime", "url": "https://t.me/crunchyroll_In_Hindi_SR"},
+        {"name": "backup", "url": "https://t.me/TGUrlsHub"},
+        {"name": "backup-2", "url": "https://t.me/TGEliteHub"},
+    ]
+
+    D = ["😘", "👾", "🤝", "👀", "❤️‍🔥", "💘", "😍", "😇", "🕊️", "🐳", "🎉", "🏆", "🗿", "⚡", "💯", "👌", "🍾"]
+
+    FONTS = [
+        "𝖠𝖡𝖢𝖣𝖤𝖥𝖦𝖧𝖨𝖩𝖪𝖫𝖬𝖭𝖮𝖯𝖰𝖱𝖲𝖳𝖴𝖵𝖶𝖷𝖸𝖹𝖺𝖻𝖼𝖽𝖾𝖿𝗀𝗁𝗂𝗃𝗄𝗅𝗆𝗇𝗈𝗉𝗊𝗋𝗌𝗍𝗎𝗏𝗐𝗑𝗒𝗓𝟢𝟣𝟤𝟥𝟦𝟧𝟨𝟩𝟪𝟫",
+        "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡxʏᴢᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡxʏᴢ0123456789",
+    ]
+
+    ADMINS = os.environ.get("ADMINS", "1679112664 7163796885 6604184902 7737229061")
+
 pyrogram.utils.MIN_CHANNEL_ID = -1009147483647
 id_pattern = re.compile(r'^.\d+$')
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-API_ID = 14050586
-API_HASH = "42a60d9c657b106370c79bb0a8ac560c"
-OWNER_ID = 7074383232
-PORT = int(os.environ.get("PORT", "8080"))
-DB_URI = os.environ.get("DB_URI", "")
-DB_NAME = "link"
-TG_BOT_WORKERS = 40
-DATABASE_CHANNEL = int(os.environ.get("DATABASE_CHANNEL", "-1003104736593"))
-
-CHAT_ID = []
-APPROVED_WELCOME = "on"
-APPROVAL_WAIT_TIME = 5
-LINK_EXPIRY = 1
-
-START_PIC = "https://files.catbox.moe/hijl9a.jpg"
-PICS_URL = (os.environ.get('PICS', 'https://api.aniwallpaper.workers.dev/random?type=girl')).split()
+BOT_TOKEN = Config.BOT_TOKEN
+API_ID = Config.API_ID
+API_HASH = Config.API_HASH
+OWNER_ID = Config.OWNER_ID
+PORT = Config.PORT
+DB_URI = Config.DB_URI
+DB_NAME = Config.DB_NAME
+TG_BOT_WORKERS = Config.TG_BOT_WORKERS
+DATABASE_CHANNEL = Config.DATABASE_CHANNEL
+CHAT_ID = Config.CHAT_ID
+APPROVED_WELCOME = Config.APPROVED_WELCOME
+APPROVAL_WAIT_TIME = Config.APPROVAL_WAIT_TIME
+LINK_EXPIRY = Config.LINK_EXPIRY
+START_PIC = Config.START_PIC
+PICS_URL = Config.PICS_URL
+START_MSG = Config.START_MSG
+OWNER = Config.OWNER
+CHANNELS_TXT = Config.CHANNELS_TXT
+OUR_CHANNELS = Config.OUR_CHANNELS
+D = Config.D
+FONTS = Config.FONTS
+SELECTED_FONT = random.choice(FONTS)
 
 def get_random_mix_id():
     chars = string.ascii_letters + string.digits
     return ''.join(random.choices(chars, k=6))
-
-START_MSG = "<b>Manage, reshare & control your links — smarter than ever.\n\n<blockquote>‣ Created for: <a href='https://t.me/SyntaxRealm'>˹ SyntaxRealm ˼</a></blockquote></b>"
-OWNER = "https://t.me/DshDm_bot"
-CHANNELS_TXT = "Our Channels"
-
-# Add or remove channels here simply by adding/removing dictionaries in the list
-OUR_CHANNELS = [
-    {"name": "main", "url": "https://t.me/SyntaxRealm"},
-    {"name": "sub-main", "url": "https://t.me/Syntax_Realm"},
-    {"name": "ongoing-anime", "url": "https://t.me/crunchyroll_In_Hindi_SR"},
-    {"name": "backup", "url": "https://t.me/TGUrlsHub"},
-    {"name": "backup-2", "url": "https://t.me/TGEliteHub"},
-]
-
-
-
-
-D = ["😘", "👾", "🤝", "👀", "❤️‍🔥", "💘", "😍", "😇", "🕊️", "🐳", "🎉", "🏆", "🗿", "⚡", "💯", "👌", "🍾"]
-
-FONTS = [
-    "𝖠𝖡𝖢𝖣𝖤𝖥𝖦𝖧𝖨𝖩𝖪𝖫𝖬𝖭𝖮𝖯𝖰𝖱𝖲𝖳𝖴𝖵𝖶𝖷𝖸𝖹𝖺𝖻𝖼𝖽𝖾𝖿𝗀𝗁𝗂𝗃𝗄𝗅𝗆𝗇𝗈𝗉𝗊𝗋𝗌𝗍𝗎𝗏𝗐𝗑𝗒𝗓𝟢𝟣𝟤𝟥𝟦𝟧𝟨𝟩𝟪𝟫",
-    "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡxʏᴢᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡxʏᴢ0123456789",
-    #"𝐀𝐁𝐂𝐃𝐄𝐅𝐆𝐇𝐈𝐉𝐊𝐋𝐌𝐍𝐎𝐏𝐐𝐑𝐒𝐓𝐔𝐕𝐖𝐗𝐘𝐙ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡ𝐱ʏᴢ𝟎𝟏𝟐𝟑𝟒𝟓𝟔𝟕𝟖𝟗"
-]
-SELECTED_FONT = random.choice(FONTS)
 
 def stylize(text):
     normal = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
@@ -77,7 +97,7 @@ def get_random_effect():
     return random.choice(EFFECT_IDS)
 
 try:
-    ADMINS = [int(x) for x in os.environ.get("ADMINS", "1679112664 7163796885 6604184902 7737229061").split() if x.isdigit()]
+    ADMINS = [int(x) for x in Config.ADMINS.split() if x.isdigit()]
 except:
     ADMINS = [1679112664]
 ADMINS.append(OWNER_ID)
@@ -318,21 +338,10 @@ class Bot(Client):
         LOGGER(__name__).info(f"Bot @{self.username} started!")
 
     async def _load_settings(self):
-        global START_PIC, START_MSG, OWNER, CHANNELS_TXT, APPROVED_WELCOME, APPROVAL_WAIT_TIME, LINK_EXPIRY, DATABASE_CHANNEL, PICS_URL, OUR_CHANNELS
         await settings.load()
-        for k, default in [("START_PIC", START_PIC), ("START_MSG", START_MSG), ("OWNER", OWNER), ("CHANNELS_TXT", CHANNELS_TXT)]:
+        for k in ["START_PIC", "START_MSG", "OWNER", "CHANNELS_TXT", "APPROVED_WELCOME", "APPROVAL_WAIT_TIME", "LINK_EXPIRY", "DATABASE_CHANNEL", "PICS_URL"]:
             v = await settings.get(k)
-            if v: globals()[k] = v
-        v = await settings.get("APPROVED_WELCOME")
-        if v is not None: APPROVED_WELCOME = v
-        v = await settings.get("APPROVAL_WAIT_TIME")
-        if v is not None: APPROVAL_WAIT_TIME = int(v)
-        v = await settings.get("LINK_EXPIRY")
-        if v is not None: LINK_EXPIRY = int(v)
-        v = await settings.get("DATABASE_CHANNEL")
-        if v is not None: DATABASE_CHANNEL = int(v)
-        v = await settings.get("PICS_URL")
-        if v: PICS_URL = str(v).split() if " " in str(v) else [str(v)]
+            if v is not None: _apply_setting(k, v)
 
     async def stop(self, *args):
         await super().stop()
@@ -884,6 +893,7 @@ def _current_val(key):
 
 def _apply_setting(key, val):
     global START_PIC, START_MSG, OWNER, CHANNELS_TXT, APPROVED_WELCOME, APPROVAL_WAIT_TIME, LINK_EXPIRY, DATABASE_CHANNEL, PICS_URL
+    setattr(Config, key, val)
     m = {"START_PIC": "START_PIC", "START_MSG": "START_MSG", "OWNER": "OWNER", "CHANNELS_TXT": "CHANNELS_TXT",
          "APPROVED_WELCOME": "APPROVED_WELCOME", "APPROVAL_WAIT_TIME": "APPROVAL_WAIT_TIME",
          "LINK_EXPIRY": "LINK_EXPIRY", "DATABASE_CHANNEL": "DATABASE_CHANNEL", "PICS_URL": "PICS_URL"}
@@ -897,9 +907,9 @@ def _apply_setting(key, val):
             globals()[g] = val
 
 def _reload_default(key):
-    env_defaults = {
+    defaults = {
         "START_PIC": "https://files.catbox.moe/hijl9a.jpg",
-        "START_MSG": "<b>Manage, reshare & control your links — smarter than ever.\n\n<blockquote>‣ Created for: <a href='https://t.me/SyntaxRealm'>˹ SyntaxRealm ˼</a></blockquote></b>",
+        "START_MSG": Config.START_MSG,
         "OWNER": "https://t.me/DshDm_bot",
         "CHANNELS_TXT": "Our Channels",
         "APPROVED_WELCOME": "on",
@@ -916,8 +926,8 @@ def _reload_default(key):
         "UPSTREAM_REPO": os.environ.get("UPSTREAM_REPO", "https://github.com/IamElite/LINK-V2"),
         "UPSTREAM_BRANCH": os.environ.get("UPSTREAM_BRANCH", "kartik"),
     }
-    if key in env_defaults:
-        _apply_setting(key, env_defaults[key])
+    if key in defaults:
+        _apply_setting(key, defaults[key])
 
 async def start_bot():
     started = False
