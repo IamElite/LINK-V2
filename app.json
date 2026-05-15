@@ -7,7 +7,6 @@
         "links",
         "share"
     ],
-    "stack": "heroku-22",
     "formation": {
         "worker": {
             "quantity": 1,
