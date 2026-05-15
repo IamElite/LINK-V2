@@ -2,48 +2,48 @@ CATEGORIES = {
     "bot_config": {
         "name": "🤖 Bot Config",
         "keys": {
-            "BOT_TOKEN": {"label": "Bot Token", "type": "str", "secret": True},
-            "API_ID": {"label": "API ID", "type": "int"},
-            "API_HASH": {"label": "API Hash", "type": "str", "secret": True},
-            "OWNER_ID": {"label": "Owner ID", "type": "int"},
-            "DB_URI": {"label": "DB URI", "type": "str", "secret": True},
-            "DB_NAME": {"label": "DB Name", "type": "str"},
+            "BOT_TOKEN": {"label": "BOT_TOKEN", "type": "str", "secret": True},
+            "API_ID": {"label": "API_ID", "type": "int"},
+            "API_HASH": {"label": "API_HASH", "type": "str", "secret": True},
+            "OWNER_ID": {"label": "OWNER_ID", "type": "int"},
+            "DB_URI": {"label": "DB_URI", "type": "str", "secret": True},
+            "DB_NAME": {"label": "DB_NAME", "type": "str"},
         }
     },
     "messages": {
         "name": "💬 Messages",
         "keys": {
-            "START_PIC": {"label": "Start Pic URL", "type": "str"},
-            "START_MSG": {"label": "Start Message", "type": "text"},
-            "OWNER": {"label": "Owner Link", "type": "str"},
-            "CHANNELS_TXT": {"label": "Channels Text", "type": "str"},
+            "START_PIC": {"label": "START_PIC", "type": "str"},
+            "START_MSG": {"label": "START_MSG", "type": "text"},
+            "OWNER": {"label": "OWNER", "type": "str"},
+            "CHANNELS_TXT": {"label": "CHANNELS_TXT", "type": "str"},
         }
     },
     "channels": {
         "name": "📺 Channels",
         "keys": {
-            "DATABASE_CHANNEL": {"label": "DB Channel ID", "type": "int"},
+            "DATABASE_CHANNEL": {"label": "DATABASE_CHANNEL", "type": "int"},
         }
     },
     "features": {
         "name": "⚙️ Features",
         "keys": {
-            "APPROVED_WELCOME": {"label": "Welcome on Approve", "type": "toggle"},
-            "APPROVAL_WAIT_TIME": {"label": "Approval Wait (sec)", "type": "int"},
-            "LINK_EXPIRY": {"label": "Link Expiry (min)", "type": "int"},
+            "APPROVED_WELCOME": {"label": "APPROVED_WELCOME", "type": "toggle"},
+            "APPROVAL_WAIT_TIME": {"label": "APPROVAL_WAIT_TIME", "type": "int"},
+            "LINK_EXPIRY": {"label": "LINK_EXPIRY", "type": "int"},
         }
     },
     "upstream": {
         "name": "🔄 Upstream",
         "keys": {
-            "UPSTREAM_REPO": {"label": "Upstream Repo", "type": "str"},
-            "UPSTREAM_BRANCH": {"label": "Upstream Branch", "type": "str"},
+            "UPSTREAM_REPO": {"label": "UPSTREAM_REPO", "type": "str"},
+            "UPSTREAM_BRANCH": {"label": "UPSTREAM_BRANCH", "type": "str"},
         }
     },
     "pics": {
         "name": "🖼️ PICS",
         "keys": {
-            "PICS_URL": {"label": "PICS URLs", "type": "list"},
+            "PICS_URL": {"label": "PICS_URL", "type": "list"},
         }
     },
 }
