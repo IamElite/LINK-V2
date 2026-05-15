@@ -100,7 +100,7 @@ admins_col = db['admins']
 
 async def add_user(user_id: int) -> bool:
     if await users_col.find_one({'_id': user_id}): return False
-    await users_col.insert_one({'_id': user_id, 'created_at': datetime.now(datetime.UTC)})
+    await users_col.insert_one({'_id': user_id, 'created_at': datetime.now(datetime.timezone.utc)})
     return True
 
 async def del_user(user_id: int) -> bool:
@@ -127,7 +127,7 @@ async def list_admins() -> List[int]:
 async def save_channel(channel_id: int) -> bool:
     await channels_col.update_one(
         {"channel_id": channel_id},
-        {"$set": {"channel_id": channel_id, "status": "active", "created_at": datetime.now(datetime.UTC)}},
+        {"$set": {"channel_id": channel_id, "status": "active", "created_at": datetime.now(datetime.timezone.utc)}},
         upsert=True
     )
     return True
@@ -144,7 +144,7 @@ async def save_encoded_link(channel_id: int) -> Optional[str]:
     encoded = base64.urlsafe_b64encode(str(channel_id).encode()).decode()
     await channels_col.update_one(
         {"channel_id": channel_id},
-        {"$set": {"encoded_link": encoded, "status": "active", "updated_at": datetime.now(datetime.UTC)}},
+        {"$set": {"encoded_link": encoded, "status": "active", "updated_at": datetime.now(datetime.timezone.utc)}},
         upsert=True
     )
     return encoded
@@ -168,7 +168,7 @@ async def get_channel_by_encoded_link2(encoded: str) -> Optional[int]:
 async def save_invite_link(channel_id: int, link: str, is_request: bool) -> bool:
     await channels_col.update_one(
         {"channel_id": channel_id},
-        {"$set": {"current_invite_link": link, "is_request_link": is_request, "invite_link_created_at": datetime.now(datetime.UTC)}},
+        {"$set": {"current_invite_link": link, "is_request_link": is_request, "invite_link_created_at": datetime.now(datetime.timezone.utc)}},
         upsert=True
     )
     return True
