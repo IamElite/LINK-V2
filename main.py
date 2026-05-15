@@ -870,13 +870,16 @@ def _apply_setting(key, val):
             globals()[g] = val
 
 async def start_bot():
+    started = False
     try:
         await bot.start()
+        started = True
         await idle()
     except Exception as e:
         LOGGER(__name__).error(f"Startup Error: {e}")
     finally:
-        await bot.stop()
+        if started:
+            await bot.stop()
 
 if __name__ == "__main__":
     asyncio.get_event_loop().run_until_complete(start_bot())
