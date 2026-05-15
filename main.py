@@ -289,19 +289,19 @@ class Bot(Client):
         try:
             await self.set_bot_commands([
                 BotCommand("start", "Start the bot & get links"),
-                BotCommand("status", "Bot status & ping"),
-                BotCommand("stats", "Bot uptime stats"),
-                BotCommand("broadcast", "Broadcast message to all users"),
-                BotCommand("cancel", "Cancel ongoing broadcast"),
-                BotCommand("channels", "List all connected channels"),
-                BotCommand("links", "Show all channel links"),
-                BotCommand("addchat", "Add a channel manually"),
-                BotCommand("delchat", "Remove a channel"),
-                BotCommand("admins", "List all admins"),
-                BotCommand("addadmin", "Add a new admin"),
-                BotCommand("deladmin", "Remove an admin"),
-                BotCommand("approveoff", "Disable auto-approve"),
-                BotCommand("approveon", "Enable auto-approve"),
+                BotCommand("status", "[Admin] Bot status & ping"),
+                BotCommand("stats", "[Owner] Bot uptime stats"),
+                BotCommand("broadcast", "[Admin] Broadcast to all users"),
+                BotCommand("cancel", "[Admin] Cancel ongoing broadcast"),
+                BotCommand("channels", "[Admin] List connected channels"),
+                BotCommand("links", "[Admin] Show all channel links"),
+                BotCommand("addchat", "[Admin] Add a channel manually"),
+                BotCommand("delchat", "[Admin] Remove a channel"),
+                BotCommand("admins", "[Owner] List all admins"),
+                BotCommand("addadmin", "[Owner] Add a new admin"),
+                BotCommand("deladmin", "[Owner] Remove an admin"),
+                BotCommand("approveoff", "[Admin] Disable auto-approve"),
+                BotCommand("approveon", "[Admin] Enable auto-approve"),
             ])
         except: pass
 
