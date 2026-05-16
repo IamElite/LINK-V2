@@ -821,7 +821,7 @@ async def settings_callback(client, query):
         await _show_category(client, query.message.chat.id, query.message.id, cat)
 
     elif data.startswith("settings_toggle_"):
-        suffix = data[17:]
+        suffix = data[data.find("_toggle_") + 8:]
         cat = next((c for c in CATEGORIES if suffix.startswith(c + "_")), None)
         if not cat: return
         key = suffix[len(cat)+1:]
@@ -833,7 +833,7 @@ async def settings_callback(client, query):
         await _show_category(client, query.message.chat.id, query.message.id, cat)
 
     elif data.startswith("settings_reset_"):
-        suffix = data[16:]
+        suffix = data[data.find("_reset_") + 7:]
         cat = next((c for c in CATEGORIES if suffix.startswith(c + "_")), None)
         if not cat: return
         key = suffix[len(cat)+1:]
@@ -843,7 +843,7 @@ async def settings_callback(client, query):
         await _show_category(client, query.message.chat.id, query.message.id, cat)
 
     elif data.startswith("settings_edit_"):
-        suffix = data[14:]
+        suffix = data[data.find("_edit_") + 6:]
         cat = next((c for c in CATEGORIES if suffix.startswith(c + "_")), None)
         if not cat: return
         key = suffix[len(cat)+1:]
