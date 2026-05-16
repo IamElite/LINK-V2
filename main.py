@@ -162,7 +162,10 @@ async def save_encoded_link(channel_id: int) -> Optional[str]:
         old = existing.get("encoded_link")
         if old and old.startswith(Config.LINK_HASH_PREFIX):
             return old
-    encoded = f"{Config.LINK_HASH_PREFIX}-{''.join(random.choices(string.ascii_lowercase + string.digits, k=7))}"
+    while True:
+        encoded = f"{Config.LINK_HASH_PREFIX}-{''.join(random.choices(string.ascii_lowercase + string.digits, k=7))}"
+        if not await channels_col.find_one({"encoded_link": encoded}):
+            break
     await channels_col.update_one(
         {"channel_id": channel_id},
         {"$set": {"encoded_link": encoded, "status": "active", "updated_at": datetime.now(timezone.utc)}},
