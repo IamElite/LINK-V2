@@ -309,7 +309,6 @@ class Bot(Client):
             await self.set_bot_commands([
                 BotCommand("start", "Start the bot & get links"),
                 BotCommand("stats", "[Admin] Bot stats, users & ping"),
-                BotCommand("stats", "[Owner] Bot uptime stats"),
                 BotCommand("broadcast", "[Admin] Broadcast to all users"),
                 BotCommand("cancel", "[Admin] Cancel ongoing broadcast"),
                 BotCommand("channels", "[Admin] List connected channels"),
