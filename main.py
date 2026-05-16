@@ -453,8 +453,9 @@ async def start_cmd(client: Bot, message: Message):
                 inv = await client.create_chat_invite_link(channel_id, expire_date=datetime.now() + timedelta(minutes=Config.LINK_EXPIRY), creates_join_request=True)
             else:
                 inv = await client.create_chat_invite_link(channel_id, expire_date=datetime.now() + timedelta(minutes=Config.LINK_EXPIRY), member_limit=1)
-            
+
             invite_link = inv.invite_link
+            asyncio.create_task(revoke_invite_after_delay(client, channel_id, invite_link, Config.LINK_EXPIRY * 60))
             btn_text = stylize("✿ Request to Join ✿") if is_request else stylize("✿ Join Channel ✿")
             btn = InlineKeyboardMarkup([[InlineKeyboardButton(btn_text, url=invite_link)]])
             
