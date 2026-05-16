@@ -328,8 +328,8 @@ class Bot(Client):
             if v is not None: _apply_setting(k, v)
 
     async def stop(self, *args):
-        await super().stop()
         LOGGER(__name__).info("Bot stopped.")
+        await super().stop()
 
 bot = Bot()
 
