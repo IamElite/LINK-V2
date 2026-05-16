@@ -326,6 +326,7 @@ class Bot(Client):
         except: pass
 
         await self._load_settings()
+        await self._upgrade_links()
         LOGGER(__name__).info(f"Bot @{self.username} started! ✊💦")
 
     async def _load_settings(self):
@@ -333,6 +334,13 @@ class Bot(Client):
         for k in ["START_PIC", "START_MSG", "OWNER", "CHANNELS_TXT", "APPROVED_WELCOME", "APPROVAL_WAIT_TIME", "LINK_EXPIRY", "DATABASE_CHANNEL", "PICS_URL"]:
             v = await settings.get(k)
             if v is not None: _apply_setting(k, v)
+
+    async def _upgrade_links(self):
+        async for ch in channels_col.find({"encoded_link": {"$exists": True}}):
+            old = ch.get("encoded_link", "")
+            if old and not old.startswith(f"{Config.LINK_HASH_PREFIX}-"):
+                await save_encoded_link(ch["channel_id"])
+                LOGGER(__name__).info(f"Upgraded link for {ch['channel_id']}")
 
     async def stop(self, *args):
         LOGGER(__name__).info("Bot stopped. ⛔️")
