@@ -295,7 +295,9 @@ class Bot(Client):
         try:
             m = await self.send_message(Config.DATABASE_CHANNEL, "<b>🤖 Bot Started ✅</b>")
             await self.delete_messages(Config.DATABASE_CHANNEL, m.id)
-        except: pass
+            LOGGER(__name__).info(f"DB channel {Config.DATABASE_CHANNEL} connected ✅")
+        except Exception as e:
+            LOGGER(__name__).warning(f"DB channel {Config.DATABASE_CHANNEL} connection failed: {e}")
         
         try:
             app = web.AppRunner(web.Application())
