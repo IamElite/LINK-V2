@@ -330,7 +330,7 @@ class Bot(Client):
 
     async def _load_settings(self):
         await settings.load()
-        for k in ["START_PIC", "START_MSG", "OWNER", "CHANNELS_TXT", "APPROVED_WELCOME", "APPROVAL_WAIT_TIME", "LINK_EXPIRY", "DATABASE_CHANNEL", "PICS_URL"]:
+        for k in ["START_PIC", "START_MSG", "OWNER", "CHANNELS_TXT", "APPROVED_WELCOME", "APPROVAL_WAIT_TIME", "LINK_EXPIRY", "DATABASE_CHANNEL", "PICS_URL", "OUR_CHANNELS"]:
             v = await settings.get(k)
             if v is not None: _apply_setting(k, v)
 
@@ -894,6 +894,9 @@ def _current_val(key):
     if v is None or v == "" or v == []:
         return "-"
     if isinstance(v, list):
+        if key == "OUR_CHANNELS":
+            import json
+            return json.dumps(v)
         return " ".join(str(x) if not isinstance(x, dict) else x.get("url", str(x)) for x in v)
     if isinstance(v, int):
         return str(v)
@@ -905,6 +908,13 @@ def _apply_setting(key, val):
             setattr(Config, key, val)
         else:
             setattr(Config, key, str(val).split() if " " in str(val) else [str(val)])
+    elif key == "OUR_CHANNELS":
+        import json
+        try:
+            p = json.loads(val) if isinstance(val, str) else val
+            if isinstance(p, list): setattr(Config, key, p)
+        except:
+            pass
     elif key in ("APPROVAL_WAIT_TIME", "LINK_EXPIRY", "DATABASE_CHANNEL", "API_ID", "OWNER_ID", "PORT"):
         setattr(Config, key, int(val) if not isinstance(val, int) else val)
     elif key in ("TG_BOT_WORKERS",):

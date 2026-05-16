@@ -2,11 +2,9 @@ CATEGORIES = {
     "bot_config": {
         "name": "🤖 Bot Config",
         "keys": {
-            "BOT_TOKEN": {"label": "BOT_TOKEN", "type": "str", "secret": True},
             "API_ID": {"label": "API_ID", "type": "int"},
             "API_HASH": {"label": "API_HASH", "type": "str", "secret": True},
             "OWNER_ID": {"label": "OWNER_ID", "type": "int"},
-            "DB_URI": {"label": "DB_URI", "type": "str", "secret": True},
             "DB_NAME": {"label": "DB_NAME", "type": "str"},
         }
     },
@@ -22,6 +20,7 @@ CATEGORIES = {
     "channels": {
         "name": "📺 Channels",
         "keys": {
+            "OUR_CHANNELS": {"label": "OUR_CHANNELS", "type": "text"},
             "DATABASE_CHANNEL": {"label": "DATABASE_CHANNEL", "type": "int"},
         }
     },
