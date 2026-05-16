@@ -308,7 +308,7 @@ class Bot(Client):
         try:
             await self.set_bot_commands([
                 BotCommand("start", "Start the bot & get links"),
-                BotCommand("status", "[Admin] Bot status & ping"),
+                BotCommand("stats", "[Admin] Bot stats, users & ping"),
                 BotCommand("stats", "[Owner] Bot uptime stats"),
                 BotCommand("broadcast", "[Admin] Broadcast to all users"),
                 BotCommand("cancel", "[Admin] Cancel ongoing broadcast"),
@@ -523,8 +523,8 @@ async def start_cmd(client: Bot, message: Message):
             await client.send_message(Config.DATABASE_CHANNEL, f"<b>{start_type}</b>\n👤 {user.mention} | <code>{user_id}</code>")
         except: pass
 
-@bot.on_message(filters.command('status') & filters.private & is_owner_or_admin)
-async def status_cmd(client: Bot, message: Message):
+@bot.on_message(filters.command('stats') & filters.private & is_owner_or_admin)
+async def stats_cmd(client: Bot, message: Message):
     t1 = time.time()
     msg = await message.reply(f"<b>{stylize('Processing...')}</b>")
     ping = (time.time() - t1) * 1000
@@ -537,11 +537,6 @@ async def status_cmd(client: Bot, message: Message):
     except:
         total_chats = 0
     await msg.edit(f"<b>👥 {stylize('Users')}: {len(users)}\n📡 {stylize('Channels')}: {db_channels}\n💬 {stylize('Total Chats')}: {total_chats}\n⏱ {stylize('Uptime')}: {uptime}\n📶 {stylize('Ping')}: {ping:.2f}ms</b>")
-
-@bot.on_message(filters.command('stats') & filters.user(Config.OWNER_ID))
-async def stats_cmd(client: Bot, message: Message):
-    uptime = get_readable_time(int((datetime.now() - client.uptime).total_seconds()))
-    await message.reply(f"<b>{stylize('BOT UPTIME')}:</b> {uptime}")
 
 @bot.on_message(filters.command('broadcast') & filters.private & is_owner_or_admin)
 async def broadcast_cmd(client: Bot, message: Message):
