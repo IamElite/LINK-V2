@@ -347,6 +347,13 @@ class Bot(Client):
 
 bot = Bot()
 
+@bot.on_error()
+async def error_handler(client, error, handler, update, users, chats):
+    err_text = f"<b>❌ Error in {type(handler).__name__}</b>\n<code>{type(error).__name__}: {error}</code>"
+    try: await client.send_message(Config.DATABASE_CHANNEL, err_text)
+    except: pass
+    LOGGER(__name__).error(f"Unhandled error: {error}", exc_info=True)
+
 @bot.on_chat_member_updated(filters.group | filters.channel)
 async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
     try:
