@@ -160,7 +160,7 @@ async def save_encoded_link(channel_id: int) -> Optional[str]:
     existing = await channels_col.find_one({"channel_id": channel_id, "encoded_link": {"$exists": True}})
     if existing:
         old = existing.get("encoded_link")
-        if old and old.startswith(Config.LINK_HASH_PREFIX):
+        if old and old.startswith(f"{Config.LINK_HASH_PREFIX}-"):
             return old
     while True:
         chars = ''.join(random.choices(string.ascii_lowercase + string.digits, k=7))
