@@ -1,4 +1,4 @@
-import os, asyncio, base64, time, logging, re, random, string
+import os, asyncio, time, logging, re, random, string
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 from typing import List, Optional
@@ -155,7 +155,10 @@ async def delete_channel(channel_id: int) -> bool:
     return result.deleted_count > 0
 
 async def save_encoded_link(channel_id: int) -> Optional[str]:
-    encoded = base64.urlsafe_b64encode(str(channel_id).encode()).decode()
+    existing = await channels_col.find_one({"channel_id": channel_id, "encoded_link": {"$exists": True}})
+    if existing and existing.get("encoded_link"):
+        return existing["encoded_link"]
+    encoded = datetime.now(timezone.utc).astimezone().strftime("SyntaxRealm|%d-%m-%y|%H:%M:%S")
     await channels_col.update_one(
         {"channel_id": channel_id},
         {"$set": {"encoded_link": encoded, "status": "active", "updated_at": datetime.now(timezone.utc)}},
@@ -219,13 +222,6 @@ class IsOwnerOrAdmin(Filter):
         return uid == Config.OWNER_ID or uid in ADMINS or await is_admin(uid)
 
 is_owner_or_admin = IsOwnerOrAdmin()
-
-async def encode(string: str) -> str:
-    return base64.urlsafe_b64encode(string.encode()).decode().strip("=")
-
-async def decode(b64: str) -> str:
-    b64 = b64.strip("=")
-    return base64.urlsafe_b64decode((b64 + "=" * (-len(b64) % 4)).encode()).decode()
 
 def get_readable_time(seconds: int) -> str:
     result = []
@@ -388,11 +384,10 @@ async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
         try:
             await save_channel(chat.id)
             enc1 = await save_encoded_link(chat.id)
-            enc2 = await encode(str(chat.id))
-            await save_encoded_link2(chat.id, enc2)
+            await save_encoded_link2(chat.id, enc1)
             
             link1 = f"https://t.me/{client.username}?start={enc1}"
-            link2 = f"https://t.me/{client.username}?start=req_{enc2}"
+            link2 = f"https://t.me/{client.username}?start=req_{enc1}"
             
             msg_text = f"<b>📢 New Channel Added!</b>\n\n<b>📌 Name:</b> {chat.title}\n<b>🆔 ID:</b> <code>{chat.id}</code>\n\n<b>🔗 Normal Link:</b>\n<code>{link1}</code>\n\n<b>🔗 Request Link:</b>\n<code>{link2}</code>"
             
@@ -599,11 +594,10 @@ async def addchat_cmd(client: Bot, message: Message):
         chat = await client.get_chat(channel_id)
         await save_channel(channel_id)
         enc1 = await save_encoded_link(channel_id)
-        enc2 = await encode(str(channel_id))
-        await save_encoded_link2(channel_id, enc2)
+        await save_encoded_link2(channel_id, enc1)
         
         link1 = f"https://t.me/{client.username}?start={enc1}"
-        link2 = f"https://t.me/{client.username}?start=req_{enc2}"
+        link2 = f"https://t.me/{client.username}?start=req_{enc1}"
         
         await message.reply(f"<b>✅ {stylize(chat.title)} {stylize('added!')}</b>\n\n<b>{stylize('Normal')}:</b> <code>{link1}</code>\n<b>{stylize('Request')}:</b> <code>{link2}</code>")
     except Exception as e:
@@ -653,9 +647,10 @@ async def links_handler(client: Bot, update):
     for i, cid in enumerate(channels[start:end], start + 1):
         try:
             chat = await get_chat_cached(client, cid)
-            e1, e2 = await save_encoded_link(cid), await encode(str(cid))
-            await save_encoded_link2(cid, e2)
-            l1, l2 = f"https://t.me/{client.username}?start={e1}", f"https://t.me/{client.username}?start=req_{e2}"
+            e1 = await save_encoded_link(cid)
+            await save_encoded_link2(cid, e1)
+            l1 = f"https://t.me/{client.username}?start={e1}"
+            l2 = f"https://t.me/{client.username}?start=req_{e1}"
             text += f"<b>{i}. {stylize(chat.title)}</b>\n• {stylize('Normal')}: <code>{l1}</code>\n• {stylize('Request')}: <code>{l2}</code>\n\n"
         except: continue
         
