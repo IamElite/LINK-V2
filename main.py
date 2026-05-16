@@ -494,7 +494,9 @@ async def start_cmd(client: Bot, message: Message):
         ])
         pic_url = f"{random.choice(Config.PICS_URL)}?r={get_random_mix_id()}"
         try: await client.send_photo(user_id, pic_url, caption=f"<b>{stylize(Config.START_MSG)}</b>", reply_markup=btns, effect_id=get_random_effect())
-        except: await client.send_photo(user_id, Config.START_PIC, caption=f"<b>{stylize(Config.START_MSG)}</b>", reply_markup=btns)
+        except:
+            try: await client.send_photo(user_id, Config.START_PIC, caption=f"<b>{stylize(Config.START_MSG)}</b>", reply_markup=btns)
+            except: pass
         start_type = stylize("📩 Simple Start")
     
     if start_type:
