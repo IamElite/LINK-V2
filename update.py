@@ -15,14 +15,16 @@ def ts():
 UPSTREAM_REPO = os.environ.get("UPSTREAM_REPO", "https://github.com/IamElite/LINK-V2")
 UPSTREAM_BRANCH = os.environ.get("UPSTREAM_BRANCH", "kartik")
 
+def ulog(msg):
+    print(f"[{ts()} - UPDATE] - __main__ - {msg}")
+
 def update_from_repo():
-    now = ts()
     clean_repo = UPSTREAM_REPO.rstrip("/")
     if clean_repo.endswith(".git"):
         clean_repo = clean_repo[:-4]
 
     zip_url = f"{clean_repo}/archive/refs/heads/{UPSTREAM_BRANCH}.zip"
-    print(f"[{now}] [UPDATE] Fetching {UPSTREAM_BRANCH}...")
+    ulog(f"Fetching {UPSTREAM_BRANCH}...")
 
     with tempfile.TemporaryDirectory() as tmp:
         zip_path = os.path.join(tmp, "update.zip")
@@ -32,7 +34,7 @@ def update_from_repo():
         try:
             request.urlretrieve(zip_url, zip_path)
         except Exception as e:
-            print(f"[{now}] [UPDATE FAIL] {e}")
+            ulog(f"FAIL: {e}")
             return False
 
         with zipfile.ZipFile(zip_path, "r") as z:
@@ -64,9 +66,9 @@ def update_from_repo():
         )
         installed = [l for l in result.stdout.split("\n") if "Successfully installed" in l]
         msg = installed[0].replace("Successfully installed ", "") if installed else "requirements satisfied"
-        print(f"[{now}] [UPDATE] Updated! {msg}")
+        ulog(f"Updated! {msg}")
     else:
-        print(f"[{now}] [UPDATE] Updated! (no requirements)")
+        ulog("Updated! (no requirements)")
 
     return True
 
