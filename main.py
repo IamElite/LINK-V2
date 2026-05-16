@@ -291,6 +291,11 @@ class Bot(Client):
         try:
             await self.send_message(Config.OWNER_ID, "<b>🤖 Bot Started ✅</b>")
         except: pass
+
+        try:
+            m = await self.send_message(Config.DATABASE_CHANNEL, "<b>🤖 Bot Started ✅</b>")
+            await self.delete_messages(Config.DATABASE_CHANNEL, m.id)
+        except: pass
         
         try:
             app = web.AppRunner(web.Application())
