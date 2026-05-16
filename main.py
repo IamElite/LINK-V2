@@ -326,7 +326,7 @@ class Bot(Client):
         except: pass
 
         await self._load_settings()
-        LOGGER(__name__).info(f"Bot @{self.username} started!")
+        LOGGER(__name__).info(f"Bot @{self.username} started! ✊💦")
 
     async def _load_settings(self):
         await settings.load()
@@ -335,7 +335,7 @@ class Bot(Client):
             if v is not None: _apply_setting(k, v)
 
     async def stop(self, *args):
-        LOGGER(__name__).info("Bot stopped.")
+        LOGGER(__name__).info("Bot stopped. ⛔️")
         await super().stop()
 
 bot = Bot()
@@ -779,6 +779,31 @@ async def callback_handler(client: Bot, query: CallbackQuery):
 
 settings_awaiting = {}
 
+async def _show_category(client, chat_id, msg_id, cat):
+    if cat not in CATEGORIES: return
+    cat_data = CATEGORIES[cat]
+    text = f"<b>{cat_data['name']}</b>\n\n"
+    btns = []
+    for key, meta in cat_data["keys"].items():
+        cur = await settings.get(key)
+        if cur is None:
+            cur = _current_val(key)
+        if meta.get("secret") and cur != "-":
+            cur = cur[:6] + "..."
+        label = meta["label"]
+        text += f"<b>{label}</b>: <code>{cur}</code>\n"
+        if meta["type"] == "toggle":
+            btns.append([InlineKeyboardButton(f"🔄 {label}", callback_data=f"settings_toggle_{cat}_{key}")])
+        else:
+            btns.append([InlineKeyboardButton(f"✏️ {label}", callback_data=f"settings_edit_{cat}_{key}")])
+        btns.append([InlineKeyboardButton(f"↩️ Reset", callback_data=f"settings_reset_{cat}_{key}")])
+    btns.append([InlineKeyboardButton("« Back", callback_data="settings")])
+    btns.append([InlineKeyboardButton("✘", callback_data="close")])
+    try:
+        await client.edit_message_text(chat_id, msg_id, text, reply_markup=InlineKeyboardMarkup(btns))
+    except:
+        pass
+
 async def settings_callback(client, query):
     data = query.data
     if data == "settings":
@@ -791,46 +816,36 @@ async def settings_callback(client, query):
 
     elif data.startswith("settings_cat_"):
         cat = data.replace("settings_cat_", "")
-        if cat not in CATEGORIES: return
-        cat_data = CATEGORIES[cat]
-        text = f"<b>{cat_data['name']}</b>\n\n"
-        btns = []
-        for key, meta in cat_data["keys"].items():
-            cur = await settings.get(key)
-            if cur is None:
-                cur = _current_val(key)
-            if meta.get("secret") and cur != "-":
-                cur = cur[:6] + "..."
-            label = meta["label"]
-            text += f"<b>{label}</b>: <code>{cur}</code>\n"
-            if meta["type"] == "toggle":
-                btns.append([InlineKeyboardButton(f"🔄 {label}", callback_data=f"settings_toggle_{key}")])
-            else:
-                btns.append([InlineKeyboardButton(f"✏️ {label}", callback_data=f"settings_edit_{key}")])
-            btns.append([InlineKeyboardButton(f"↩️ Reset", callback_data=f"settings_reset_{key}")])
-        btns.append([InlineKeyboardButton("« Back", callback_data="settings")])
-        btns.append([InlineKeyboardButton("✘", callback_data="close")])
-        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(btns))
+        await _show_category(client, query.message.chat.id, query.message.id, cat)
 
     elif data.startswith("settings_toggle_"):
-        key = data.replace("settings_toggle_", "")
+        suffix = data[17:]
+        cat = next((c for c in CATEGORIES if suffix.startswith(c + "_")), None)
+        if not cat: return
+        key = suffix[len(cat)+1:]
         cur = await settings.get(key, "off")
         new = "off" if cur == "on" else "on"
         await settings.set(key, new)
         _apply_setting(key, new)
-        await query.answer(f"✅ {key} -> {new}", show_alert=True)
-        await settings_callback(client, query)
+        await query.answer(f"✅ {key} -> {new}", show_alert=False)
+        await _show_category(client, query.message.chat.id, query.message.id, cat)
 
     elif data.startswith("settings_reset_"):
-        key = data.replace("settings_reset_", "")
+        suffix = data[16:]
+        cat = next((c for c in CATEGORIES if suffix.startswith(c + "_")), None)
+        if not cat: return
+        key = suffix[len(cat)+1:]
         await settings.delete(key)
         _reload_default(key)
-        await query.answer(f"↩️ {key} reset to default!", show_alert=True)
-        await settings_callback(client, query)
+        await query.answer(f"↩️ {key} reset to default!", show_alert=False)
+        await _show_category(client, query.message.chat.id, query.message.id, cat)
 
     elif data.startswith("settings_edit_"):
-        key = data.replace("settings_edit_", "")
-        settings_awaiting[query.from_user.id] = {"key": key, "msg_id": query.message.id}
+        suffix = data[14:]
+        cat = next((c for c in CATEGORIES if suffix.startswith(c + "_")), None)
+        if not cat: return
+        key = suffix[len(cat)+1:]
+        settings_awaiting[query.from_user.id] = {"key": key, "cat": cat, "msg_id": query.message.id}
         await query.message.reply(f"<b>✏️ Send new value for</b> <code>{key}</code>\n/skip to keep current /cancel to abort")
         await query.answer()
 
@@ -838,8 +853,10 @@ async def settings_callback(client, query):
 async def settings_input(client, message):
     uid = message.from_user.id
     if uid not in settings_awaiting: return
-    data = settings_awaiting[uid]
-    key = data["key"]
+    sd = settings_awaiting[uid]
+    key = sd["key"]
+    cat = sd.get("cat")
+    msg_id = sd.get("msg_id")
     val = message.text.strip()
     await settings.set(key, val)
     _apply_setting(key, val)
@@ -848,6 +865,11 @@ async def settings_input(client, message):
         await message.reply(f"<b>✅</b> <code>{key}</code> updated!")
     except:
         await message.reply(f"<b>✅</b> <code>{key}</code> updated!")
+    if cat and msg_id:
+        try:
+            await _show_category(client, message.chat.id, msg_id, cat)
+        except:
+            pass
 
 @bot.on_message(filters.command("skip") & filters.private)
 async def settings_skip(client, message):
