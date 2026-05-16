@@ -64,6 +64,8 @@ class Config:
     UPSTREAM_REPO = os.environ.get("UPSTREAM_REPO", "https://github.com/IamElite/LINK-V2")
     UPSTREAM_BRANCH = os.environ.get("UPSTREAM_BRANCH", "kartik")
 
+    LINK_HASH_PREFIX = "SyntaxRealm"
+
 Config._ORIG = {k: getattr(Config, k) for k in list(Config.__dict__) if not k.startswith("_") and not callable(getattr(Config, k))}
 
 pyrogram.utils.MIN_CHANNEL_ID = -1009147483647
@@ -158,9 +160,9 @@ async def save_encoded_link(channel_id: int) -> Optional[str]:
     existing = await channels_col.find_one({"channel_id": channel_id, "encoded_link": {"$exists": True}})
     if existing:
         old = existing.get("encoded_link")
-        if old and old.startswith("SyntaxRealm"):
+        if old and old.startswith(Config.LINK_HASH_PREFIX):
             return old
-    encoded = datetime.now(timezone.utc).astimezone().strftime("SyntaxRealm_%H-%M-%S")
+    encoded = datetime.now(timezone.utc).astimezone().strftime(f"{Config.LINK_HASH_PREFIX}_%H-%M-%S")
     await channels_col.update_one(
         {"channel_id": channel_id},
         {"$set": {"encoded_link": encoded, "status": "active", "updated_at": datetime.now(timezone.utc)}},
