@@ -4,6 +4,12 @@ from collections import defaultdict
 from typing import List, Optional
 from logging.handlers import RotatingFileHandler
 
+os.environ["TZ"] = "Asia/Kolkata"
+try:
+    time.tzset()
+except:
+    pass
+
 import motor.motor_asyncio
 import pyrogram.utils
 from aiohttp import web
