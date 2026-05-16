@@ -14,7 +14,7 @@ import motor.motor_asyncio
 import pyrogram.utils
 from aiohttp import web
 from pyrogram import Client, filters, idle
-from pyrogram.enums import ParseMode, ChatMemberStatus, ChatType
+from pyrogram.enums import ParseMode, ChatMemberStatus, ChatType, ButtonStyle
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto, ChatJoinRequest, ChatMemberUpdated, BotCommand
 from pyrogram.errors import FloodWait, UserNotParticipant, UserIsBlocked, InputUserDeactivated, ChatAdminRequired, RPCError
 from pyrogram.filters import Filter
@@ -480,7 +480,7 @@ async def start_cmd(client: Bot, message: Message):
             invite_link = inv.invite_link
             asyncio.create_task(revoke_invite_after_delay(client, channel_id, invite_link, Config.LINK_EXPIRY * 60))
             btn_text = stylize("✿ Request to Join ✿") if is_request else stylize("✿ Join Channel ✿")
-            btn = InlineKeyboardMarkup([[InlineKeyboardButton(btn_text, url=invite_link)]])
+            btn = InlineKeyboardMarkup([[InlineKeyboardButton(btn_text, url=invite_link, style=ButtonStyle.DANGER)]])
             
             try:
                 chat = await get_chat_cached(client, channel_id)
