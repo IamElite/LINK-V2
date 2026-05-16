@@ -158,7 +158,7 @@ async def save_encoded_link(channel_id: int) -> Optional[str]:
     existing = await channels_col.find_one({"channel_id": channel_id, "encoded_link": {"$exists": True}})
     if existing and existing.get("encoded_link"):
         return existing["encoded_link"]
-    encoded = datetime.now(timezone.utc).astimezone().strftime("SyntaxRealm|%d-%m-%y|%H:%M:%S")
+    encoded = datetime.now(timezone.utc).astimezone().strftime("SyntaxRealm_%d-%m-%y_%H-%M-%S")
     await channels_col.update_one(
         {"channel_id": channel_id},
         {"$set": {"encoded_link": encoded, "status": "active", "updated_at": datetime.now(timezone.utc)}},
