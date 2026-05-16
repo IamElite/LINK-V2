@@ -64,6 +64,8 @@ class Config:
     UPSTREAM_REPO = os.environ.get("UPSTREAM_REPO", "https://github.com/IamElite/LINK-V2")
     UPSTREAM_BRANCH = os.environ.get("UPSTREAM_BRANCH", "kartik")
 
+Config._ORIG = {k: getattr(Config, k) for k in list(Config.__dict__) if not k.startswith("_") and not callable(getattr(Config, k))}
+
 pyrogram.utils.MIN_CHANNEL_ID = -1009147483647
 id_pattern = re.compile(r'^.\d+$')
 
@@ -904,36 +906,21 @@ def _current_val(key):
     return str(v)
 
 def _apply_setting(key, val):
-    setattr(Config, key, val)
     if key == "PICS_URL":
-        setattr(Config, key, str(val).split() if " " in str(val) else [str(val)])
+        if isinstance(val, list):
+            setattr(Config, key, val)
+        else:
+            setattr(Config, key, str(val).split() if " " in str(val) else [str(val)])
     elif key in ("APPROVAL_WAIT_TIME", "LINK_EXPIRY", "DATABASE_CHANNEL", "API_ID", "OWNER_ID", "PORT"):
-        setattr(Config, key, int(val))
+        setattr(Config, key, int(val) if not isinstance(val, int) else val)
     elif key in ("TG_BOT_WORKERS",):
-        setattr(Config, key, int(val))
+        setattr(Config, key, int(val) if not isinstance(val, int) else val)
+    else:
+        setattr(Config, key, val)
 
 def _reload_default(key):
-    defaults = {
-        "START_PIC": Config.START_PIC,
-        "START_MSG": Config.START_MSG,
-        "OWNER": Config.OWNER,
-        "CHANNELS_TXT": Config.CHANNELS_TXT,
-        "APPROVED_WELCOME": Config.APPROVED_WELCOME,
-        "APPROVAL_WAIT_TIME": str(Config.APPROVAL_WAIT_TIME),
-        "LINK_EXPIRY": str(Config.LINK_EXPIRY),
-        "DATABASE_CHANNEL": str(Config.DATABASE_CHANNEL),
-        "PICS_URL": " ".join(Config.PICS_URL) if isinstance(Config.PICS_URL, list) else str(Config.PICS_URL),
-        "BOT_TOKEN": Config.BOT_TOKEN,
-        "API_ID": str(Config.API_ID),
-        "API_HASH": Config.API_HASH,
-        "OWNER_ID": str(Config.OWNER_ID),
-        "DB_URI": Config.DB_URI,
-        "DB_NAME": Config.DB_NAME,
-        "UPSTREAM_REPO": Config.UPSTREAM_REPO,
-        "UPSTREAM_BRANCH": Config.UPSTREAM_BRANCH,
-    }
-    if key in defaults:
-        _apply_setting(key, defaults[key])
+    if key in Config._ORIG:
+        _apply_setting(key, Config._ORIG[key])
 
 async def start_bot():
     started = False
