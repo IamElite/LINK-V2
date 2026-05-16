@@ -166,20 +166,8 @@ async def save_encoded_link(channel_id: int) -> Optional[str]:
     )
     return encoded
 
-async def save_encoded_link2(channel_id: int, encoded: str) -> Optional[str]:
-    await channels_col.update_one(
-        {"channel_id": channel_id},
-        {"$set": {"req_encoded_link": encoded, "status": "active"}},
-        upsert=True
-    )
-    return encoded
-
 async def get_channel_by_encoded_link(encoded: str) -> Optional[int]:
     ch = await channels_col.find_one({"encoded_link": encoded, "status": "active"})
-    return ch["channel_id"] if ch else None
-
-async def get_channel_by_encoded_link2(encoded: str) -> Optional[int]:
-    ch = await channels_col.find_one({"req_encoded_link": encoded, "status": "active"})
     return ch["channel_id"] if ch else None
 
 async def save_invite_link(channel_id: int, link: str, is_request: bool) -> bool:
@@ -384,7 +372,6 @@ async def auto_add_remove_channel(client: Bot, update: ChatMemberUpdated):
         try:
             await save_channel(chat.id)
             enc1 = await save_encoded_link(chat.id)
-            await save_encoded_link2(chat.id, enc1)
             
             link1 = f"https://t.me/{client.username}?start={enc1}"
             link2 = f"https://t.me/{client.username}?start=req_{enc1}"
@@ -447,9 +434,7 @@ async def start_cmd(client: Bot, message: Message):
             is_request = arg.startswith("req_")
             if is_request:
                 arg = arg[4:]
-                channel_id = await get_channel_by_encoded_link2(arg)
-            else:
-                channel_id = await get_channel_by_encoded_link(arg)
+            channel_id = await get_channel_by_encoded_link(arg)
             
             if not channel_id:
                 return await message.reply(f"<b>❌ {stylize('Invalid or expired link.')}</b>")
@@ -594,7 +579,6 @@ async def addchat_cmd(client: Bot, message: Message):
         chat = await client.get_chat(channel_id)
         await save_channel(channel_id)
         enc1 = await save_encoded_link(channel_id)
-        await save_encoded_link2(channel_id, enc1)
         
         link1 = f"https://t.me/{client.username}?start={enc1}"
         link2 = f"https://t.me/{client.username}?start=req_{enc1}"
@@ -648,7 +632,6 @@ async def links_handler(client: Bot, update):
         try:
             chat = await get_chat_cached(client, cid)
             e1 = await save_encoded_link(cid)
-            await save_encoded_link2(cid, e1)
             l1 = f"https://t.me/{client.username}?start={e1}"
             l2 = f"https://t.me/{client.username}?start=req_{e1}"
             text += f"<b>{i}. {stylize(chat.title)}</b>\n• {stylize('Normal')}: <code>{l1}</code>\n• {stylize('Request')}: <code>{l2}</code>\n\n"
