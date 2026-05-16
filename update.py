@@ -1,18 +1,28 @@
 import os, sys, zipfile, shutil, tempfile, subprocess
 from urllib import request
+from datetime import datetime, timezone
+
+os.environ["TZ"] = "Asia/Kolkata"
+try:
+    import time
+    time.tzset()
+except:
+    pass
+
+def ts():
+    return datetime.now(timezone.utc).astimezone().strftime("%d-%b-%y %H:%M:%S")
 
 UPSTREAM_REPO = os.environ.get("UPSTREAM_REPO", "https://github.com/IamElite/LINK-V2")
 UPSTREAM_BRANCH = os.environ.get("UPSTREAM_BRANCH", "kartik")
 
 def update_from_repo():
-    print("[UPDATE] Checking for updates...")
-
+    now = ts()
     clean_repo = UPSTREAM_REPO.rstrip("/")
     if clean_repo.endswith(".git"):
         clean_repo = clean_repo[:-4]
 
     zip_url = f"{clean_repo}/archive/refs/heads/{UPSTREAM_BRANCH}.zip"
-    print(f"[UPDATE] Downloading from: {zip_url}")
+    print(f"[{now}] [UPDATE] Fetching {UPSTREAM_BRANCH}...")
 
     with tempfile.TemporaryDirectory() as tmp:
         zip_path = os.path.join(tmp, "update.zip")
@@ -22,7 +32,7 @@ def update_from_repo():
         try:
             request.urlretrieve(zip_url, zip_path)
         except Exception as e:
-            print(f"[UPDATE FAIL] {e}")
+            print(f"[{now}] [UPDATE FAIL] {e}")
             return False
 
         with zipfile.ZipFile(zip_path, "r") as z:
@@ -48,13 +58,16 @@ def update_from_repo():
                 shutil.move(s, d)
 
     if os.path.exists("requirements.txt"):
-        print("[UPDATE] requirements.txt found, installing dependencies...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt", "--quiet"])
-        print("[UPDATE] Dependencies installed!")
+        result = subprocess.run(
+            [sys.executable, "-m", "pip", "install", "-r", "requirements.txt", "--quiet"],
+            capture_output=True, text=True
+        )
+        installed = [l for l in result.stdout.split("\n") if "Successfully installed" in l]
+        msg = installed[0].replace("Successfully installed ", "") if installed else "requirements satisfied"
+        print(f"[{now}] [UPDATE] Updated! {msg}")
     else:
-        print("[UPDATE] No requirements.txt found, skipping pip install.")
+        print(f"[{now}] [UPDATE] Updated! (no requirements)")
 
-    print("[UPDATE] Update applied successfully!")
     return True
 
 if __name__ == "__main__":
