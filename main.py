@@ -37,7 +37,7 @@ class Config:
     APPROVAL_WAIT_TIME = 5
     LINK_EXPIRY = 1
 
-    START_PIC = "https://files.catbox.moe/hijl9a.jpg"
+    START_PIC = "https://files.catbox.moe/92v0as.jpg"
     PICS_URL = (os.environ.get('PICS', 'https://api.aniwallpaper.workers.dev/random?type=girl')).split()
 
     START_MSG = "<b>Manage, reshare & control your links — smarter than ever.\n\n<blockquote>‣ Created for: <a href='https://t.me/SyntaxRealm'>˹ SyntaxRealm ˼</a></blockquote></b>"
