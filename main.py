@@ -30,14 +30,14 @@ class Config:
     DB_URI = os.environ.get("DB_URI", "")
     DB_NAME = "link"
     TG_BOT_WORKERS = 40
-    DATABASE_CHANNEL = int(os.environ.get("DATABASE_CHANNEL", "-1003104736593"))
+    DATABASE_CHANNEL = int(os.environ.get("DATABASE_CHANNEL", "-1003976133170"))
 
     CHAT_ID = []
     APPROVED_WELCOME = "on"
     APPROVAL_WAIT_TIME = 5
     LINK_EXPIRY = 1
 
-    START_PIC = "https://files.catbox.moe/92v0as.jpg"
+    START_PIC = "https://files.catbox.moe/0sb927.png"
     PICS_URL = (os.environ.get('PICS', 'https://api.aniwallpaper.workers.dev/random?type=girl')).split()
 
     START_MSG = "<b>Manage, reshare & control your links — smarter than ever.\n\n<blockquote>‣ Created for: <a href='https://t.me/SyntaxRealm'>˹ SyntaxRealm ˼</a></blockquote></b>"
