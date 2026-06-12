@@ -13,7 +13,7 @@ def ts():
     return datetime.now(timezone.utc).astimezone().strftime("%d-%b-%y %H:%M:%S")
 
 UPSTREAM_REPO = os.environ.get("UPSTREAM_REPO", "https://github.com/IamElite/LINK-V2")
-UPSTREAM_BRANCH = os.environ.get("UPSTREAM_BRANCH", "kartik")
+UPSTREAM_BRANCH = os.environ.get("UPSTREAM_BRANCH", "main")
 
 def ulog(msg):
     print(f"[{ts()} - UPDATE] - __main__ - {msg}")
