@@ -3,6 +3,8 @@ from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 from typing import List, Optional
 from logging.handlers import RotatingFileHandler
+from threading import Thread
+from urllib.request import urlopen
 
 os.environ["TZ"] = "Asia/Kolkata"
 try:
@@ -20,6 +22,7 @@ from pyrogram.errors import FloodWait, UserNotParticipant, UserIsBlocked, InputU
 from pyrogram.filters import Filter
 
 from settings import Settings, CATEGORIES
+
 
 class Config:
     BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
@@ -269,6 +272,17 @@ async def get_chat_cached(client, channel_id):
 is_canceled = False
 cancel_lock = asyncio.Lock()
 
+# Web Server Setup
+routes = web.RouteTableDef()
+
+@routes.get("/", allow_head=True)
+async def root_route_handler(request):
+    return web.json_response({"status": "bot is running"})
+
+async def web_server():
+    web_app = web.Application(client_max_size=30000000)
+    web_app.add_routes(routes)
+    return web_app
 
 class Bot(Client):
     def __init__(self):
@@ -287,23 +301,42 @@ class Bot(Client):
         self.me = await self.get_me()
         self.username = self.me.username
         self.set_parse_mode(ParseMode.HTML)
-        
+
         try:
-            await self.send_message(Config.OWNER_ID, "<b>🤖 Bot Started ✅</b>")
+            await self.send_message(Config.OWNER_ID, "**🤖 Bot Started ✅**")
         except: pass
 
         try:
-            m = await self.send_message(Config.DATABASE_CHANNEL, "<b>🤖 Bot Started ✅</b>")
+            m = await self.send_message(Config.DATABASE_CHANNEL, "**🤖 Bot Started ✅**")
             await self.delete_messages(Config.DATABASE_CHANNEL, m.id)
             LOGGER(__name__).info(f"DB channel {Config.DATABASE_CHANNEL} connected ✅")
         except Exception as e:
             LOGGER(__name__).warning(f"DB channel {Config.DATABASE_CHANNEL} connection failed: {e}")
-        
+
+        # Start Web Server
         try:
-            app = web.AppRunner(web.Application())
+            app = web.AppRunner(await web_server())
             await app.setup()
-            await web.TCPSite(app, "0.0.0.0", Config.PORT).start()
-        except: pass
+            site = web.TCPSite(app, "0.0.0.0", Config.PORT)
+            await site.start()
+            LOGGER(__name__).info(f"🌐 Web server started on port {Config.PORT}")
+        except Exception as e:
+            LOGGER(__name__).error(f"Web server failed: {e}")
+
+        # Start Ping Thread (Bot ko 24/7 alive rakhne ke liye)
+        BASE_URL = os.environ.get("BASE_URL")
+        if BASE_URL:
+            BASE_URL = BASE_URL.rstrip("/")
+            def ping():
+                while True:
+                    try:
+                        urlopen(BASE_URL, timeout=10)
+                        time.sleep(600) # 10 minute me ek baar ping karega
+                    except Exception as e:
+                        LOGGER(__name__).error(f"Ping error: {e}")
+                        time.sleep(2)
+            Thread(target=ping, daemon=True).start()
+            LOGGER(__name__).info(f"📡 Ping thread started for {BASE_URL}")
 
         try:
             await self.set_bot_commands([
@@ -346,6 +379,7 @@ class Bot(Client):
         await super().stop()
 
 bot = Bot()
+
 
 @bot.on_error()
 async def error_handler(client, error, handler, update, users, chats):
